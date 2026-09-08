@@ -1,4 +1,4 @@
-https://github.com/Lincoln-lema/StudySync-webapp/blob/main
+https://github.com/Lincoln-lema/StudySync-webapp/blob/main/API_NEEDS.md
 
 Week 2 API Needs — Team 2 (StudySync)
 API Needs Statements

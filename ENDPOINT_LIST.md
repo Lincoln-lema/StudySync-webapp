@@ -1,4 +1,4 @@
-**https://github.com/Lincoln-lema/StudySync-webapp/blob/main**
+**https://github.com/Lincoln-lema/StudySync-webapp/blob/main/ENDPOINT_LIST.md**
 
 #### **ENDPOINT_LIST.md — StudySync API**
 

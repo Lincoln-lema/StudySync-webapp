@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS flashcards (
 );
 
 INSERT INTO flashcard_decks (id, title, owner_id, shared_with_group) VALUES
-    ('d1', 'Organic Chemistry Basics', 'anna', 1);
+    ('d1', 'Welding & Metalwork Basics', 'anna', 1);
 
 INSERT INTO flashcards (id, deck_id, question, answer) VALUES
-    ('f1', 'd1', 'What is a functional group?', 'A specific group of atoms within a molecule responsible for its reactions'),
-    ('f2', 'd1', 'What is an alkane?', 'A saturated hydrocarbon with only single bonds');
+    ('f1', 'd1', 'What is arc welding?', 'A welding process that uses an electric arc to melt and join metal pieces together'),
+    ('f2', 'd1', 'Why is a welding mask necessary?', 'It protects the eyes and face from intense UV light, sparks, and heat produced during welding');

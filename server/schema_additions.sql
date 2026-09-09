@@ -1,12 +1,6 @@
--- StudySync — Step 1-3 additions (run AFTER the members table your teammate already created)
--- Covers needs statements 1-4 and 6 from API_NEEDS.md
--- (statement 5, reliability scores, already lives on members.reliability)
 
 USE studysync;
 
--- ---------------------------------------------------------------
--- Needs statement 1: "read StudySync group member information"
--- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS groups_table (
     id VARCHAR(10) PRIMARY KEY,
     name VARCHAR(100)
@@ -21,9 +15,7 @@ INSERT INTO groups_table (id, name) VALUES
 
 UPDATE members SET group_id = 'g1' WHERE id IN ('anna', 'ben', 'clara');
 
--- ---------------------------------------------------------------
--- Needs statement 2 + 3: "read tasks and task status" / "read deadlines and calendar events"
--- ---------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS tasks (
     id VARCHAR(10) PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
@@ -38,9 +30,7 @@ INSERT INTO tasks (id, title, assigned_to, status, deadline) VALUES
     ('t2', 'Read chapter 6 notes', 'ben', 'late', '2026-09-05 23:59:00'),
     ('t3', 'Prepare flashcards for quiz', 'clara', 'done', '2026-09-08 18:00:00');
 
--- ---------------------------------------------------------------
--- Needs statement 4: "read StudySync activity history" (heatmap)
--- ---------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS activity_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     member_id VARCHAR(10) NOT NULL,
@@ -55,9 +45,6 @@ INSERT INTO activity_log (member_id, activity_date, minutes_studied) VALUES
     ('ben', '2026-09-06', 10),
     ('clara', '2026-09-07', 60);
 
--- ---------------------------------------------------------------
--- Needs statement 6: "read StudySync flashcards and study materials"
--- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS flashcard_decks (
     id VARCHAR(10) PRIMARY KEY,
     title VARCHAR(150) NOT NULL,

@@ -1,3 +1,4 @@
+
 USE studysync;
 
 CREATE TABLE IF NOT EXISTS groups_table (
@@ -14,6 +15,7 @@ INSERT INTO groups_table (id, name) VALUES
 
 UPDATE members SET group_id = 'g1' WHERE id IN ('anna', 'ben', 'clara');
 
+
 CREATE TABLE IF NOT EXISTS tasks (
     id VARCHAR(10) PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
@@ -27,6 +29,7 @@ INSERT INTO tasks (id, title, assigned_to, status, deadline) VALUES
     ('t1', 'Finish calculus problem set', 'anna', 'pending', '2026-09-12 23:59:00'),
     ('t2', 'Read chapter 6 notes', 'ben', 'late', '2026-09-05 23:59:00'),
     ('t3', 'Prepare flashcards for quiz', 'clara', 'done', '2026-09-08 18:00:00');
+
 
 CREATE TABLE IF NOT EXISTS activity_log (
     id INT AUTO_INCREMENT PRIMARY KEY,

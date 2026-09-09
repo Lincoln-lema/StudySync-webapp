@@ -1,24 +1,29 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 
-const db = require('./db');
+const membersRouter = require('./routes/members');
+const tasksRouter = require('./routes/tasks');
+const deadlinesRouter = require('./routes/deadlines');
+const activityRouter = require('./routes/activity');
+const flashcardsRouter = require('./routes/flashcards');
+const studentsRouter = require('./routes/students');
+
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/members', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT * FROM members');
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
+app.use('/api/members', membersRouter);
+app.use('/api/tasks', tasksRouter);
+app.use('/api/deadlines', deadlinesRouter);
+app.use('/api/activity', activityRouter);
+app.use('/api/flashcards', flashcardsRouter);
+app.use('/api/students', studentsRouter);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;

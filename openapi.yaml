@@ -1,0 +1,687 @@
+openapi: 3.0.0
+info:
+  title: StudySync API
+  version: 1.0.0
+  description: A collaborative study management tool API for tracking tasks, deadlines, activity, and study materials
+  contact:
+    name: StudySync Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://api.studysync.example.com
+    description: Production server
+
+tags:
+  - name: Members
+    description: Team member information and reliability scores
+  - name: Tasks
+    description: Task management and status tracking
+  - name: Deadlines
+    description: Deadline and calendar event management
+  - name: Activity
+    description: User activity history and study logs
+  - name: Study Materials
+    description: Flashcard decks and study materials
+
+paths:
+  /api/members:
+    get:
+      tags:
+        - Members
+      summary: Get all team members with group information
+      description: Retrieves a list of all team members including their reliability scores and group assignments
+      operationId: getMembers
+      responses:
+        '200':
+          description: Successfully retrieved list of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+              example:
+                - id: anna
+                  name: Anna
+                  initials: A
+                  reliability: 95
+                  group_id: 1
+                  group_name: Study Group Alpha
+                - id: ben
+                  name: Ben
+                  initials: B
+                  reliability: 80
+                  group_id: 1
+                  group_name: Study Group Alpha
+                - id: clara
+                  name: Clara
+                  initials: C
+                  reliability: 90
+                  group_id: 1
+                  group_name: Study Group Alpha
+        '500':
+          description: Server error - unable to fetch members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch members
+
+  /users/{userId}/reliability-score:
+    get:
+      tags:
+        - Members
+      summary: Get reliability score for a specific user
+      description: Returns the reliability score for a user, which indicates their track record of completing tasks on time
+      operationId: getUserReliabilityScore
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The unique identifier of the user
+          schema:
+            type: string
+          example: anna
+      responses:
+        '200':
+          description: Successfully retrieved reliability score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReliabilityScore'
+              example:
+                user_id: anna
+                user_name: Anna
+                reliability_score: 95
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: User not found
+        '500':
+          description: Server error - unable to fetch reliability score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch reliability score
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: Get tasks with optional filtering
+      description: Retrieves all tasks, optionally filtered by status, group, or assignee
+      operationId: getTasks
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter tasks by status (pending, done, late)
+          schema:
+            type: string
+            enum:
+              - pending
+              - done
+              - late
+          example: pending
+        - name: groupId
+          in: query
+          required: false
+          description: Filter tasks by group ID
+          schema:
+            type: integer
+          example: 1
+        - name: assignee
+          in: query
+          required: false
+          description: Filter tasks by assignee (member ID)
+          schema:
+            type: string
+          example: anna
+      responses:
+        '200':
+          description: Successfully retrieved list of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              example:
+                - id: 1
+                  title: Math homework
+                  assigned_to: anna
+                  status: pending
+                  deadline: "2026-02-10T14:00:00Z"
+                - id: 2
+                  title: Essay draft
+                  assigned_to: ben
+                  status: done
+                  deadline: "2026-02-08T09:00:00Z"
+                - id: 3
+                  title: Project presentation
+                  assigned_to: clara
+                  status: late
+                  deadline: "2026-02-05T18:00:00Z"
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid status value. Must be pending, done, or late
+        '500':
+          description: Server error - unable to fetch tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch tasks
+
+  /calendar-events:
+    get:
+      tags:
+        - Deadlines
+      summary: Get deadlines and calendar events in a date range
+      description: Retrieves all deadlines/calendar events between specified dates, useful for calendar and timeline views
+      operationId: getCalendarEvents
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Start date for the range (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+          example: "2026-02-01T00:00:00Z"
+        - name: to
+          in: query
+          required: true
+          description: End date for the range (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+          example: "2026-02-28T23:59:59Z"
+      responses:
+        '200':
+          description: Successfully retrieved calendar events in the date range
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deadline'
+              example:
+                - id: 1
+                  title: Math homework
+                  assigned_to: anna
+                  status: pending
+                  deadline: "2026-02-10T14:00:00Z"
+                - id: 3
+                  title: Project presentation
+                  assigned_to: clara
+                  status: late
+                  deadline: "2026-02-05T18:00:00Z"
+        '400':
+          description: Invalid date range parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid date format. Use ISO 8601 format (e.g., 2026-02-01T00:00:00Z)
+        '500':
+          description: Server error - unable to fetch calendar events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch calendar events
+
+  /deadlines:
+    get:
+      tags:
+        - Deadlines
+      summary: Get all upcoming deadlines sorted by date
+      description: Retrieves all tasks with deadlines, sorted in ascending order by deadline date
+      operationId: getDeadlines
+      responses:
+        '200':
+          description: Successfully retrieved list of deadlines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deadline'
+              example:
+                - id: 3
+                  title: Project presentation
+                  assigned_to: clara
+                  status: late
+                  deadline: "2026-02-05T18:00:00Z"
+                - id: 2
+                  title: Essay draft
+                  assigned_to: ben
+                  status: done
+                  deadline: "2026-02-08T09:00:00Z"
+                - id: 1
+                  title: Math homework
+                  assigned_to: anna
+                  status: pending
+                  deadline: "2026-02-10T14:00:00Z"
+        '500':
+          description: Server error - unable to fetch deadlines
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch deadlines
+
+  /users/{userId}/activity:
+    get:
+      tags:
+        - Activity
+      summary: Get activity history for a specific user
+      description: Retrieves the study/work activity log for a user, showing when they studied and for how long
+      operationId: getUserActivity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The unique identifier of the user
+          schema:
+            type: string
+          example: anna
+      responses:
+        '200':
+          description: Successfully retrieved user activity history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityLog'
+              example:
+                - member_id: anna
+                  activity_date: "2026-02-09T14:30:00Z"
+                  minutes_studied: 60
+                - member_id: anna
+                  activity_date: "2026-02-08T10:15:00Z"
+                  minutes_studied: 45
+                - member_id: anna
+                  activity_date: "2026-02-07T19:00:00Z"
+                  minutes_studied: 90
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: User not found
+        '500':
+          description: Server error - unable to fetch activity data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch activity data
+
+  /activity:
+    get:
+      tags:
+        - Activity
+      summary: Get activity log for all users or filtered by member
+      description: Retrieves activity logs, optionally filtered by a specific member. Useful for team-wide activity tracking and heatmaps
+      operationId: getActivity
+      parameters:
+        - name: member
+          in: query
+          required: false
+          description: Filter activity by member ID
+          schema:
+            type: string
+          example: anna
+      responses:
+        '200':
+          description: Successfully retrieved activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityLog'
+              example:
+                - member_id: anna
+                  activity_date: "2026-02-09T14:30:00Z"
+                  minutes_studied: 60
+                - member_id: ben
+                  activity_date: "2026-02-09T10:00:00Z"
+                  minutes_studied: 45
+                - member_id: clara
+                  activity_date: "2026-02-08T19:00:00Z"
+                  minutes_studied: 90
+        '400':
+          description: Invalid member filter parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid member ID format
+        '500':
+          description: Server error - unable to fetch activity data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch activity data
+
+  /flashcard-decks:
+    get:
+      tags:
+        - Study Materials
+      summary: Get all flashcard decks, optionally filtered by group
+      description: Retrieves all flashcard decks with their cards, optionally filtered to a specific group
+      operationId: getFlashcardDecks
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          description: Filter decks by group ID
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Successfully retrieved flashcard decks with cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlashcardDeck'
+              example:
+                - id: 1
+                  title: Biology Chapter 5
+                  owner_id: anna
+                  shared_with_group: 1
+                  cards:
+                    - id: 101
+                      deck_id: 1
+                      question: What is photosynthesis?
+                      answer: The process by which plants convert light energy into chemical energy
+                    - id: 102
+                      deck_id: 1
+                      question: What is the structure of a mitochondrion?
+                      answer: "Outer membrane, inner membrane, cristae, matrix"
+                - id: 2
+                  title: Spanish Vocabulary
+                  owner_id: ben
+                  shared_with_group: 1
+                  cards:
+                    - id: 201
+                      deck_id: 2
+                      question: How do you say "hello" in Spanish?
+                      answer: "Hola"
+        '400':
+          description: Invalid group ID parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid group ID format
+        '500':
+          description: Server error - unable to fetch flashcard decks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Failed to fetch flashcards
+
+components:
+  schemas:
+    Member:
+      type: object
+      description: A team member with reliability tracking
+      required:
+        - id
+        - name
+        - initials
+        - reliability
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the member
+          example: anna
+        name:
+          type: string
+          description: Full name of the member
+          example: Anna
+        initials:
+          type: string
+          description: Member's initials for display purposes
+          example: A
+          minLength: 1
+          maxLength: 5
+        reliability:
+          type: integer
+          description: Reliability score (0-100) indicating track record of completing tasks on time
+          example: 95
+          minimum: 0
+          maximum: 100
+        group_id:
+          type: integer
+          description: ID of the group this member belongs to (nullable)
+          example: 1
+          nullable: true
+        group_name:
+          type: string
+          description: Name of the group this member belongs to (nullable)
+          example: Study Group Alpha
+          nullable: true
+
+    ReliabilityScore:
+      type: object
+      description: Reliability score information for a user
+      required:
+        - user_id
+        - user_name
+        - reliability_score
+      properties:
+        user_id:
+          type: string
+          description: Unique identifier for the user
+          example: anna
+        user_name:
+          type: string
+          description: Full name of the user
+          example: Anna
+        reliability_score:
+          type: integer
+          description: Reliability score (0-100) indicating track record of completing tasks on time
+          example: 95
+          minimum: 0
+          maximum: 100
+
+    Task:
+      type: object
+      description: A task or to-do item assigned to a team member
+      required:
+        - id
+        - title
+        - assigned_to
+        - status
+        - deadline
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the task
+          example: 1
+        title:
+          type: string
+          description: Title/description of the task
+          example: Math homework
+        assigned_to:
+          type: string
+          description: ID of the team member this task is assigned to
+          example: anna
+        status:
+          type: string
+          description: Current status of the task
+          enum:
+            - pending
+            - done
+            - late
+          example: pending
+        deadline:
+          type: string
+          format: date-time
+          description: Deadline for completing the task (ISO 8601 format)
+          example: "2026-02-10T14:00:00Z"
+
+    Deadline:
+      type: object
+      description: A deadline or calendar event with associated task information
+      required:
+        - id
+        - title
+        - assigned_to
+        - status
+        - deadline
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the deadline/task
+          example: 1
+        title:
+          type: string
+          description: Title of the deadline/task
+          example: Math homework
+        assigned_to:
+          type: string
+          description: ID of the team member responsible
+          example: anna
+        status:
+          type: string
+          description: Current status of the task
+          enum:
+            - pending
+            - done
+            - late
+          example: pending
+        deadline:
+          type: string
+          format: date-time
+          description: The deadline date and time (ISO 8601 format)
+          example: "2026-02-10T14:00:00Z"
+
+    ActivityLog:
+      type: object
+      description: A record of study or work activity for a team member
+      required:
+        - member_id
+        - activity_date
+        - minutes_studied
+      properties:
+        member_id:
+          type: string
+          description: ID of the team member who completed this activity
+          example: anna
+        activity_date:
+          type: string
+          format: date-time
+          description: When the activity occurred (ISO 8601 format)
+          example: "2026-02-09T14:30:00Z"
+        minutes_studied:
+          type: integer
+          description: Duration of the activity in minutes
+          example: 60
+          minimum: 0
+
+    Flashcard:
+      type: object
+      description: A single flashcard with a question and answer
+      required:
+        - id
+        - deck_id
+        - question
+        - answer
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the flashcard
+          example: 101
+        deck_id:
+          type: integer
+          description: ID of the deck this card belongs to
+          example: 1
+        question:
+          type: string
+          description: The question side of the flashcard
+          example: What is photosynthesis?
+        answer:
+          type: string
+          description: The answer side of the flashcard
+          example: The process by which plants convert light energy into chemical energy
+
+    FlashcardDeck:
+      type: object
+      description: A deck of flashcards with all associated cards
+      required:
+        - id
+        - title
+        - owner_id
+        - cards
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the deck
+          example: 1
+        title:
+          type: string
+          description: Title of the flashcard deck
+          example: Biology Chapter 5
+        owner_id:
+          type: string
+          description: ID of the user who created this deck
+          example: anna
+        shared_with_group:
+          type: integer
+          description: ID of the group this deck is shared with (nullable)
+          example: 1
+          nullable: true
+        cards:
+          type: array
+          description: Array of all flashcards in this deck
+          items:
+            $ref: '#/components/schemas/Flashcard'
+
+    Error:
+      type: object
+      description: Standard error response
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: Failed to fetch members

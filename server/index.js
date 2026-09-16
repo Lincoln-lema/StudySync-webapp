@@ -7,7 +7,6 @@ const tasksRouter = require('./routes/tasks');
 const deadlinesRouter = require('./routes/deadlines');
 const activityRouter = require('./routes/activity');
 const flashcardsRouter = require('./routes/flashcards');
-const studentsRouter = require('./routes/students');
 
 const app = express();
 app.use(cors());
@@ -18,7 +17,6 @@ app.use('/api/tasks', tasksRouter);
 app.use('/api/deadlines', deadlinesRouter);
 app.use('/api/activity', activityRouter);
 app.use('/api/flashcards', flashcardsRouter);
-app.use('/api/students', studentsRouter);
 
 const PORT = process.env.PORT || 5000;
 

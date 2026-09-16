@@ -1,6 +1,10 @@
 const request = require('supertest');
 const app = require('../index');
 
+afterAll(async () => {
+  await require('../db').end();
+});
+
 describe('GET /api/tasks', () => {
   it('returns 200 and an array of tasks', async () => {
     const res = await request(app).get('/api/tasks');

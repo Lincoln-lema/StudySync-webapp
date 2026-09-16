@@ -1,6 +1,10 @@
 const request = require('supertest');
 const app = require('../index');
 
+afterAll(async () => {
+  await require('../db').end();
+});
+
 describe('GET /api/flashcards', () => {
   it('returns 200 and an array of decks', async () => {
     const res = await request(app).get('/api/flashcards');

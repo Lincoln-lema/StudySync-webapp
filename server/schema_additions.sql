@@ -1,4 +1,3 @@
-
 USE studysync;
 
 CREATE TABLE IF NOT EXISTS groups_table (
@@ -6,12 +5,30 @@ CREATE TABLE IF NOT EXISTS groups_table (
     name VARCHAR(100)
 );
 
-ALTER TABLE members
-    ADD COLUMN IF NOT EXISTS group_id VARCHAR(10),
-    ADD CONSTRAINT fk_members_group FOREIGN KEY (group_id) REFERENCES groups_table(id);
+SET @col_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'members'
+      AND COLUMN_NAME = 'group_id'
+);
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE members ADD COLUMN group_id VARCHAR(10)', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-INSERT INTO groups_table (id, name) VALUES
-    ('g1', 'Study Group Alpha');
+SET @fk_exists := (
+    SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE()
+      AND CONSTRAINT_NAME = 'fk_members_group'
+);
+SET @sql := IF(@fk_exists = 0,
+    'ALTER TABLE members ADD CONSTRAINT fk_members_group FOREIGN KEY (group_id) REFERENCES groups_table(id)',
+    'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+INSERT INTO groups_table (id, name) VALUES ('g1', 'Study Group Alpha');
 
 UPDATE members SET group_id = 'g1' WHERE id IN ('anna', 'ben', 'clara');
 
@@ -62,8 +79,8 @@ CREATE TABLE IF NOT EXISTS flashcards (
 );
 
 INSERT INTO flashcard_decks (id, title, owner_id, shared_with_group) VALUES
-    ('d1', 'Welding & Metalwork Basics', 'anna', 1);
+    ('d1', 'Data Structures Basics', 'anna', 1);
 
 INSERT INTO flashcards (id, deck_id, question, answer) VALUES
-    ('f1', 'd1', 'What is arc welding?', 'A welding process that uses an electric arc to melt and join metal pieces together'),
-    ('f2', 'd1', 'Why is a welding mask necessary?', 'It protects the eyes and face from intense UV light, sparks, and heat produced during welding');
+    ('f1', 'd1', 'What is a hash table?', 'A data structure that maps keys to values for O(1) average lookup'),
+    ('f2', 'd1', 'What is Big-O notation?', 'A way of describing an algorithm''s worst-case complexity');

@@ -74,7 +74,6 @@ Confirm each endpoint works by visiting these in a browser:
 - `localhost:5000/api/deadlines`
 - `localhost:5000/api/activity`
 - `localhost:5000/api/flashcards`
-- `localhost:5000/api/students`
 
 Run the automated test suite:
 

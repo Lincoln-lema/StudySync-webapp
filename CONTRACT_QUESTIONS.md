@@ -4,6 +4,8 @@
 **Upstream Partner Reviewed:** SettleIn (Team 1) — Student Housing & Accommodation Marketplace  
 **Target Specification:** SettleIn openapi.yaml (5 endpoints for residence areas, accommodation amenities, lease timelines, verified profiles, and group housing inquiries)
 
+> **Status: RESOLVED** — SettleIn's updated `openapi.yaml` (v1.0.0) answers all three questions below. See the [Resolution Summary](#resolution-summary) at the bottom of this document.
+
 ---
 
 ## Overview
@@ -182,11 +184,49 @@ StudySync's group calendar marks student unavailability during relocation. If we
 
 ---
 
+## Resolution Summary
+
+SettleIn addressed all three questions in `openapi.yaml` v1.0.0. Integration is now unblocked; StudySync's client lives in `src/api/settlein.js` with integration test stubs in `server/integration/settlein.test.js`.
+
+### Question 1 → Residence-Area Coordinates, Distance, Privacy & Freshness
+
+| Concern | Resolved by SettleIn openapi.yaml |
+| --- | --- |
+| Coordinate format | `coordinates: { latitude: number, longitude: number }` — separate fields, ranges `[-90,90]` and `[-180,180]` |
+| Distance unit | `distance_to_campus_km` (float `min: 0.0`) — walking/transit distance to the campus gate in kilometers |
+| Privacy boundary | Neighborhood-level only: `estate_name` string returned; exact building/room number redacted |
+| Data freshness | `cached_at` (ISO 8601 date-time) returned on every residence-area response |
+
+### Question 2 → Study-Amenities Errors, Null Semantics, Rating Scale & Freshness
+
+| Concern | Resolved by SettleIn openapi.yaml |
+| --- | --- |
+| Error responses | Unified `ErrorResponse { error, message, status_code, timestamp }` documented for `401`, `404`, `500` on every endpoint |
+| Nullable/optional fields | All amenity fields are `required`; booleans (`has_dedicated_desk`, `has_backup_generator`) always present; `quiet_hours` is an object with `starts_at`/`ends_at` (24-h `HH:mm` regex) and `policy_enforced` |
+| Rating scale | `wifi_rating` float `1.0–5.0`; `wifi_speed_mbps` integer |
+| Freshness | `last_inspected_at` (ISO 8601 date-time) indicating last verified inspection |
+
+### Question 3 → Lease Timeline Semantics, Timezone, Multi-Lease & Caching
+
+| Concern | Resolved by SettleIn openapi.yaml |
+| --- | --- |
+| Multiple/single leases | Single lease object per student identified by `booking_id`, with lifecycle via `lease_status` enum (`pending`, `confirmed`, `active`, `terminated`, `completed`) |
+| Date format & timezone | `move_in_date` is ISO 8601 date-time (`Z`); `lease_start_date`/`lease_end_date` are date-only (`YYYY-MM-DD`) |
+| End date provided | `lease_end_date` is explicit and required — no duration computation needed |
+| Partial/incomplete data | Covered by the `lease_status` enum (e.g., `pending`) rather than null-swallowing |
+| Busy-window semantics | `relocation_window_start`/`relocation_window_end` (ISO 8601) plus computed `is_relocating: boolean` for calendar unavailability |
+
+---
+
 ## Next Steps
 
-Awaiting SettleIn team's responses to the above questions. Once clarified, StudySync will finalize API client code generation and integration test stubs.
+- [x] Spec reviewed and questions resolved against SettleIn `openapi.yaml` v1.0.0
+- [x] SettleIn API client generated in `src/api/settlein.js`
+- [ ] Enable `server/integration/settlein.test.js` (`SETTLEIN_LIVE_TESTS=1`) once SettleIn's server is reachable
+- [ ] Wire residence-area, amenities, and lease data into the Calendar/Group/Housing pages
 
 **Date Submitted:** Week 4  
+**Date Resolved:** 2026-09-16 (after SettleIn published openapi.yaml v1.0.0)  
 **Target Resolution Date:** Before Week 5 build kickoff
 
 ---

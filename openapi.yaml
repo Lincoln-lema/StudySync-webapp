@@ -48,19 +48,19 @@ paths:
                   name: Anna
                   initials: A
                   reliability: 95
-                  group_id: 1
+                  group_id: g1
                   group_name: Study Group Alpha
                 - id: ben
                   name: Ben
                   initials: B
                   reliability: 80
-                  group_id: 1
+                  group_id: g1
                   group_name: Study Group Alpha
                 - id: clara
                   name: Clara
                   initials: C
                   reliability: 90
-                  group_id: 1
+                  group_id: g1
                   group_name: Study Group Alpha
         '500':
           description: Server error - unable to fetch members
@@ -138,8 +138,8 @@ paths:
           required: false
           description: Filter tasks by group ID
           schema:
-            type: integer
-          example: 1
+            type: string
+          example: g1
         - name: assignee
           in: query
           required: false
@@ -157,21 +157,21 @@ paths:
                 items:
                   $ref: '#/components/schemas/Task'
               example:
-                - id: 1
-                  title: Math homework
+                - id: t1
+                  title: Finish calculus problem set
                   assigned_to: anna
                   status: pending
-                  deadline: "2026-02-10T14:00:00Z"
-                - id: 2
-                  title: Essay draft
+                  deadline: "2026-09-12T23:59:00Z"
+                - id: t2
+                  title: Read chapter 6 notes
                   assigned_to: ben
-                  status: done
-                  deadline: "2026-02-08T09:00:00Z"
-                - id: 3
-                  title: Project presentation
-                  assigned_to: clara
                   status: late
-                  deadline: "2026-02-05T18:00:00Z"
+                  deadline: "2026-09-05T23:59:00Z"
+                - id: t3
+                  title: Prepare flashcards for quiz
+                  assigned_to: clara
+                  status: done
+                  deadline: "2026-09-08T18:00:00Z"
         '400':
           description: Invalid filter parameters
           content:
@@ -204,7 +204,7 @@ paths:
           schema:
             type: string
             format: date-time
-          example: "2026-02-01T00:00:00Z"
+          example: "2026-09-01T00:00:00Z"
         - name: to
           in: query
           required: true
@@ -212,7 +212,7 @@ paths:
           schema:
             type: string
             format: date-time
-          example: "2026-02-28T23:59:59Z"
+          example: "2026-09-30T23:59:59Z"
       responses:
         '200':
           description: Successfully retrieved calendar events in the date range
@@ -223,16 +223,16 @@ paths:
                 items:
                   $ref: '#/components/schemas/Deadline'
               example:
-                - id: 1
-                  title: Math homework
-                  assigned_to: anna
-                  status: pending
-                  deadline: "2026-02-10T14:00:00Z"
-                - id: 3
-                  title: Project presentation
-                  assigned_to: clara
+                - id: t2
+                  title: Read chapter 6 notes
+                  assigned_to: ben
                   status: late
-                  deadline: "2026-02-05T18:00:00Z"
+                  deadline: "2026-09-05T23:59:00Z"
+                - id: t3
+                  title: Prepare flashcards for quiz
+                  assigned_to: clara
+                  status: done
+                  deadline: "2026-09-08T18:00:00Z"
         '400':
           description: Invalid date range parameters
           content:
@@ -240,7 +240,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Invalid date format. Use ISO 8601 format (e.g., 2026-02-01T00:00:00Z)
+                error: Invalid date format. Use ISO 8601 format (e.g., 2026-09-01T00:00:00Z)
         '500':
           description: Server error - unable to fetch calendar events
           content:
@@ -267,21 +267,21 @@ paths:
                 items:
                   $ref: '#/components/schemas/Deadline'
               example:
-                - id: 3
-                  title: Project presentation
-                  assigned_to: clara
-                  status: late
-                  deadline: "2026-02-05T18:00:00Z"
-                - id: 2
-                  title: Essay draft
+                - id: t2
+                  title: Read chapter 6 notes
                   assigned_to: ben
+                  status: late
+                  deadline: "2026-09-05T23:59:00Z"
+                - id: t3
+                  title: Prepare flashcards for quiz
+                  assigned_to: clara
                   status: done
-                  deadline: "2026-02-08T09:00:00Z"
-                - id: 1
-                  title: Math homework
+                  deadline: "2026-09-08T18:00:00Z"
+                - id: t1
+                  title: Finish calculus problem set
                   assigned_to: anna
                   status: pending
-                  deadline: "2026-02-10T14:00:00Z"
+                  deadline: "2026-09-12T23:59:00Z"
         '500':
           description: Server error - unable to fetch deadlines
           content:
@@ -317,14 +317,11 @@ paths:
                   $ref: '#/components/schemas/ActivityLog'
               example:
                 - member_id: anna
-                  activity_date: "2026-02-09T14:30:00Z"
-                  minutes_studied: 60
+                  activity_date: "2026-09-07T00:00:00Z"
+                  minutes_studied: 30
                 - member_id: anna
-                  activity_date: "2026-02-08T10:15:00Z"
+                  activity_date: "2026-09-06T00:00:00Z"
                   minutes_studied: 45
-                - member_id: anna
-                  activity_date: "2026-02-07T19:00:00Z"
-                  minutes_studied: 90
         '404':
           description: User not found
           content:
@@ -368,14 +365,14 @@ paths:
                   $ref: '#/components/schemas/ActivityLog'
               example:
                 - member_id: anna
-                  activity_date: "2026-02-09T14:30:00Z"
-                  minutes_studied: 60
+                  activity_date: "2026-09-07T00:00:00Z"
+                  minutes_studied: 30
                 - member_id: ben
-                  activity_date: "2026-02-09T10:00:00Z"
-                  minutes_studied: 45
+                  activity_date: "2026-09-06T00:00:00Z"
+                  minutes_studied: 10
                 - member_id: clara
-                  activity_date: "2026-02-08T19:00:00Z"
-                  minutes_studied: 90
+                  activity_date: "2026-09-07T00:00:00Z"
+                  minutes_studied: 60
         '400':
           description: Invalid member filter parameter
           content:
@@ -406,8 +403,8 @@ paths:
           required: false
           description: Filter decks by group ID
           schema:
-            type: integer
-          example: 1
+            type: string
+          example: g1
       responses:
         '200':
           description: Successfully retrieved flashcard decks with cards
@@ -418,28 +415,19 @@ paths:
                 items:
                   $ref: '#/components/schemas/FlashcardDeck'
               example:
-                - id: 1
-                  title: Biology Chapter 5
+                - id: d1
+                  title: Data Structures Basics
                   owner_id: anna
-                  shared_with_group: 1
+                  shared_with_group: g1
                   cards:
-                    - id: 101
-                      deck_id: 1
-                      question: What is photosynthesis?
-                      answer: The process by which plants convert light energy into chemical energy
-                    - id: 102
-                      deck_id: 1
-                      question: What is the structure of a mitochondrion?
-                      answer: "Outer membrane, inner membrane, cristae, matrix"
-                - id: 2
-                  title: Spanish Vocabulary
-                  owner_id: ben
-                  shared_with_group: 1
-                  cards:
-                    - id: 201
-                      deck_id: 2
-                      question: How do you say "hello" in Spanish?
-                      answer: "Hola"
+                    - id: f1
+                      deck_id: d1
+                      question: What is a hash table?
+                      answer: A data structure that maps keys to values for O(1) average lookup
+                    - id: f2
+                      deck_id: d1
+                      question: What is Big-O notation?
+                      answer: A way of describing an algorithm's worst-case complexity
         '400':
           description: Invalid group ID parameter
           content:
@@ -489,9 +477,9 @@ components:
           minimum: 0
           maximum: 100
         group_id:
-          type: integer
+          type: string
           description: ID of the group this member belongs to (nullable)
-          example: 1
+          example: g1
           nullable: true
         group_name:
           type: string
@@ -533,13 +521,13 @@ components:
         - deadline
       properties:
         id:
-          type: integer
+          type: string
           description: Unique identifier for the task
-          example: 1
+          example: t1
         title:
           type: string
           description: Title/description of the task
-          example: Math homework
+          example: Finish calculus problem set
         assigned_to:
           type: string
           description: ID of the team member this task is assigned to
@@ -556,7 +544,7 @@ components:
           type: string
           format: date-time
           description: Deadline for completing the task (ISO 8601 format)
-          example: "2026-02-10T14:00:00Z"
+          example: "2026-09-12T23:59:00Z"
 
     Deadline:
       type: object
@@ -569,13 +557,13 @@ components:
         - deadline
       properties:
         id:
-          type: integer
+          type: string
           description: Unique identifier for the deadline/task
-          example: 1
+          example: t1
         title:
           type: string
           description: Title of the deadline/task
-          example: Math homework
+          example: Finish calculus problem set
         assigned_to:
           type: string
           description: ID of the team member responsible
@@ -592,7 +580,7 @@ components:
           type: string
           format: date-time
           description: The deadline date and time (ISO 8601 format)
-          example: "2026-02-10T14:00:00Z"
+          example: "2026-09-12T23:59:00Z"
 
     ActivityLog:
       type: object
@@ -610,11 +598,11 @@ components:
           type: string
           format: date-time
           description: When the activity occurred (ISO 8601 format)
-          example: "2026-02-09T14:30:00Z"
+          example: "2026-09-07T00:00:00Z"
         minutes_studied:
           type: integer
           description: Duration of the activity in minutes
-          example: 60
+          example: 30
           minimum: 0
 
     Flashcard:
@@ -627,21 +615,21 @@ components:
         - answer
       properties:
         id:
-          type: integer
+          type: string
           description: Unique identifier for the flashcard
-          example: 101
+          example: f1
         deck_id:
-          type: integer
+          type: string
           description: ID of the deck this card belongs to
-          example: 1
+          example: d1
         question:
           type: string
           description: The question side of the flashcard
-          example: What is photosynthesis?
+          example: What is a hash table?
         answer:
           type: string
           description: The answer side of the flashcard
-          example: The process by which plants convert light energy into chemical energy
+          example: A data structure that maps keys to values for O(1) average lookup
 
     FlashcardDeck:
       type: object
@@ -653,21 +641,21 @@ components:
         - cards
       properties:
         id:
-          type: integer
+          type: string
           description: Unique identifier for the deck
-          example: 1
+          example: d1
         title:
           type: string
           description: Title of the flashcard deck
-          example: Biology Chapter 5
+          example: Data Structures Basics
         owner_id:
           type: string
           description: ID of the user who created this deck
           example: anna
         shared_with_group:
-          type: integer
-          description: ID of the group this deck is shared with (nullable)
-          example: 1
+          type: string
+          description: ID of the group this deck is shared with, derived from the owner's group when the deck is marked shared (nullable)
+          example: g1
           nullable: true
         cards:
           type: array

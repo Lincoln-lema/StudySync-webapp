@@ -1,14 +1,44 @@
+import { useEffect, useState } from 'react';
+import { fetchMembers, fetchTasks } from '../api';
+
 function Dashboard({ data, setPage }) {
   const { group, tasks } = data;
 
+  // Live data from the Express API. Falls back to local data when the
+  // backend isn't running so the app still works offline.
+  const [live, setLive] = useState(null);
+  const [liveError, setLiveError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchMembers(), fetchTasks()])
+      .then(([members, rows]) => {
+        if (cancelled) return;
+        setLive({ members, tasks: rows });
+      })
+      .catch((err) => {
+        if (!cancelled) setLiveError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const members = live ? live.members : group.members;
+  const allTasks = live ? live.tasks : tasks;
+
   // Counts for the stat cards - same filter() logic as the original.
-  const total = tasks.length;
-  const done = tasks.filter((t) => t.status === 'done').length;
-  const late = tasks.filter((t) => t.status === 'late').length;
-  const pending = tasks.filter((t) => t.status === 'pending').length;
+  const total = allTasks.length;
+  const done = allTasks.filter((t) => t.status === 'done').length;
+  const late = allTasks.filter((t) => t.status === 'late').length;
+  const pending = allTasks.filter((t) => t.status === 'pending').length;
 
   // Upcoming = not done, sorted soonest first.
-  const upcoming = tasks
+  const upcoming = allTasks
     .filter((t) => t.status !== 'done')
     .sort((a, b) => new Date(a.due) - new Date(b.due));
 
@@ -18,8 +48,20 @@ function Dashboard({ data, setPage }) {
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Good morning, Anna.</h2>
           <p className="text-sm text-slate-500 mt-1">
-            {group.name} · {group.members.length} members · Due {group.dueDate}
+            {group.name} · {members.length} members · Due {group.dueDate}
           </p>
+          <span
+            className={
+              'inline-block mt-2 text-xs font-semibold px-3 py-1 rounded-full ' +
+              (live
+                ? 'bg-sync-green/10 text-sync-green'
+                : liveError
+                ? 'bg-warning-amber/10 text-warning-amber'
+                : 'bg-slate-100 text-slate-500')
+            }
+          >
+            {loading ? 'Connecting to database…' : live ? '● Connected to MySQL' : '● Offline — showing local data'}
+          </span>
         </div>
         <button
           onClick={() => setPage('group')}
@@ -53,7 +95,7 @@ function Dashboard({ data, setPage }) {
         {/* Member list */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="text-xs font-semibold text-slate-500 uppercase mb-4">Team Members</div>
-          {group.members.map((m) => (
+          {members.map((m) => (
             <div key={m.id} className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-white text-xs font-bold">

@@ -1,6 +1,10 @@
 const request = require('supertest');
 const app = require('../index');
 
+afterAll(async () => {
+  await require('../db').end();
+});
+
 describe('GET /api/deadlines', () => {
   it('returns 200 and an array', async () => {
     const res = await request(app).get('/api/deadlines');

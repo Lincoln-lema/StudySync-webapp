@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: StudySync API
-  version: 1.0.0
+  version: 1.1.0
   description: A collaborative study management tool API for tracking tasks, deadlines, activity, and study materials
   contact:
     name: StudySync Team
@@ -50,18 +50,6 @@ paths:
                   reliability: 95
                   group_id: g1
                   group_name: Study Group Alpha
-                - id: ben
-                  name: Ben
-                  initials: B
-                  reliability: 80
-                  group_id: g1
-                  group_name: Study Group Alpha
-                - id: clara
-                  name: Clara
-                  initials: C
-                  reliability: 90
-                  group_id: g1
-                  group_name: Study Group Alpha
         '500':
           description: Server error - unable to fetch members
           content:
@@ -70,6 +58,144 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: Failed to fetch members
+    post:
+      tags:
+        - Members
+      summary: Create a new member
+      operationId: createMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+                - name
+                - initials
+              properties:
+                id:
+                  type: string
+                  example: dan
+                name:
+                  type: string
+                  example: Dan
+                initials:
+                  type: string
+                  example: D
+                reliability:
+                  type: integer
+                  example: 100
+                  minimum: 0
+                  maximum: 100
+                group_id:
+                  type: string
+                  nullable: true
+                  example: g1
+      responses:
+        '201':
+          description: Member created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to create member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/members/{id}:
+    put:
+      tags:
+        - Members
+      summary: Update an existing member
+      operationId: updateMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - initials
+              properties:
+                name:
+                  type: string
+                initials:
+                  type: string
+                reliability:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                group_id:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to update member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Members
+      summary: Delete a member
+      operationId: deleteMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Member deleted
+        '404':
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to delete member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /users/{userId}/reliability-score:
     get:
@@ -114,7 +240,7 @@ paths:
               example:
                 error: Failed to fetch reliability score
 
-  /tasks:
+  /api/tasks:
     get:
       tags:
         - Tasks
@@ -162,16 +288,6 @@ paths:
                   assigned_to: anna
                   status: pending
                   deadline: "2026-09-12T23:59:00Z"
-                - id: t2
-                  title: Read chapter 6 notes
-                  assigned_to: ben
-                  status: late
-                  deadline: "2026-09-05T23:59:00Z"
-                - id: t3
-                  title: Prepare flashcards for quiz
-                  assigned_to: clara
-                  status: done
-                  deadline: "2026-09-08T18:00:00Z"
         '400':
           description: Invalid filter parameters
           content:
@@ -188,19 +304,157 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: Failed to fetch tasks
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+                - title
+                - assigned_to
+                - deadline
+              properties:
+                id:
+                  type: string
+                  example: t4
+                title:
+                  type: string
+                  example: Review lecture notes
+                assigned_to:
+                  type: string
+                  description: Member ID this task is assigned to (must reference an existing member)
+                  example: anna
+                status:
+                  type: string
+                  enum: [pending, done, late]
+                  default: pending
+                  example: pending
+                deadline:
+                  type: string
+                  format: date-time
+                  example: "2026-09-20T23:59:00Z"
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to create task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tasks/{id}:
+    patch:
+      tags:
+        - Tasks
+      summary: Update fields on an existing task
+      operationId: updateTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: At least one field must be provided
+              properties:
+                title:
+                  type: string
+                assigned_to:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, done, late]
+                deadline:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to update task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Tasks
+      summary: Delete a task
+      operationId: deleteTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Task deleted
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error - unable to delete task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /calendar-events:
     get:
       tags:
         - Deadlines
       summary: Get deadlines and calendar events in a date range
-      description: Retrieves all deadlines/calendar events between specified dates, useful for calendar and timeline views
+      description: >-
+        Retrieves all deadlines/calendar events between specified dates, useful for calendar and timeline views.
+        NOTE: not yet implemented on the server as of Week 6 — documented for planned future work.
       operationId: getCalendarEvents
       parameters:
         - name: from
           in: query
           required: true
-          description: Start date for the range (ISO 8601 format)
           schema:
             type: string
             format: date-time
@@ -208,7 +462,6 @@ paths:
         - name: to
           in: query
           required: true
-          description: End date for the range (ISO 8601 format)
           schema:
             type: string
             format: date-time
@@ -222,35 +475,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Deadline'
-              example:
-                - id: t2
-                  title: Read chapter 6 notes
-                  assigned_to: ben
-                  status: late
-                  deadline: "2026-09-05T23:59:00Z"
-                - id: t3
-                  title: Prepare flashcards for quiz
-                  assigned_to: clara
-                  status: done
-                  deadline: "2026-09-08T18:00:00Z"
         '400':
           description: Invalid date range parameters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Invalid date format. Use ISO 8601 format (e.g., 2026-09-01T00:00:00Z)
         '500':
           description: Server error - unable to fetch calendar events
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Failed to fetch calendar events
 
-  /deadlines:
+  /api/deadlines:
     get:
       tags:
         - Deadlines
@@ -266,43 +504,26 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Deadline'
-              example:
-                - id: t2
-                  title: Read chapter 6 notes
-                  assigned_to: ben
-                  status: late
-                  deadline: "2026-09-05T23:59:00Z"
-                - id: t3
-                  title: Prepare flashcards for quiz
-                  assigned_to: clara
-                  status: done
-                  deadline: "2026-09-08T18:00:00Z"
-                - id: t1
-                  title: Finish calculus problem set
-                  assigned_to: anna
-                  status: pending
-                  deadline: "2026-09-12T23:59:00Z"
         '500':
           description: Server error - unable to fetch deadlines
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Failed to fetch deadlines
 
   /users/{userId}/activity:
     get:
       tags:
         - Activity
       summary: Get activity history for a specific user
-      description: Retrieves the study/work activity log for a user, showing when they studied and for how long
+      description: >-
+        Retrieves the study/work activity log for a user, showing when they studied and for how long.
+        NOTE: not yet implemented on the server as of Week 6 — documented for planned future work.
       operationId: getUserActivity
       parameters:
         - name: userId
           in: path
           required: true
-          description: The unique identifier of the user
           schema:
             type: string
           example: anna
@@ -315,31 +536,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ActivityLog'
-              example:
-                - member_id: anna
-                  activity_date: "2026-09-07T00:00:00Z"
-                  minutes_studied: 30
-                - member_id: anna
-                  activity_date: "2026-09-06T00:00:00Z"
-                  minutes_studied: 45
         '404':
           description: User not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: User not found
         '500':
           description: Server error - unable to fetch activity data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Failed to fetch activity data
 
-  /activity:
+  /api/activity:
     get:
       tags:
         - Activity
@@ -350,7 +560,6 @@ paths:
         - name: member
           in: query
           required: false
-          description: Filter activity by member ID
           schema:
             type: string
           example: anna
@@ -363,34 +572,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ActivityLog'
-              example:
-                - member_id: anna
-                  activity_date: "2026-09-07T00:00:00Z"
-                  minutes_studied: 30
-                - member_id: ben
-                  activity_date: "2026-09-06T00:00:00Z"
-                  minutes_studied: 10
-                - member_id: clara
-                  activity_date: "2026-09-07T00:00:00Z"
-                  minutes_studied: 60
         '400':
           description: Invalid member filter parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Invalid member ID format
         '500':
           description: Server error - unable to fetch activity data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Failed to fetch activity data
 
-  /flashcard-decks:
+  /api/flashcards:
     get:
       tags:
         - Study Materials
@@ -401,7 +596,6 @@ paths:
         - name: groupId
           in: query
           required: false
-          description: Filter decks by group ID
           schema:
             type: string
           example: g1
@@ -424,26 +618,18 @@ paths:
                       deck_id: d1
                       question: What is a hash table?
                       answer: A data structure that maps keys to values for O(1) average lookup
-                    - id: f2
-                      deck_id: d1
-                      question: What is Big-O notation?
-                      answer: A way of describing an algorithm's worst-case complexity
         '400':
           description: Invalid group ID parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Invalid group ID format
         '500':
           description: Server error - unable to fetch flashcard decks
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: Failed to fetch flashcards
 
 components:
   schemas:
@@ -458,38 +644,31 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for the member
           example: anna
         name:
           type: string
-          description: Full name of the member
           example: Anna
         initials:
           type: string
-          description: Member's initials for display purposes
           example: A
           minLength: 1
           maxLength: 5
         reliability:
           type: integer
-          description: Reliability score (0-100) indicating track record of completing tasks on time
           example: 95
           minimum: 0
           maximum: 100
         group_id:
           type: string
-          description: ID of the group this member belongs to (nullable)
           example: g1
           nullable: true
         group_name:
           type: string
-          description: Name of the group this member belongs to (nullable)
           example: Study Group Alpha
           nullable: true
 
     ReliabilityScore:
       type: object
-      description: Reliability score information for a user
       required:
         - user_id
         - user_name
@@ -497,15 +676,12 @@ components:
       properties:
         user_id:
           type: string
-          description: Unique identifier for the user
           example: anna
         user_name:
           type: string
-          description: Full name of the user
           example: Anna
         reliability_score:
           type: integer
-          description: Reliability score (0-100) indicating track record of completing tasks on time
           example: 95
           minimum: 0
           maximum: 100
@@ -522,19 +698,15 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for the task
           example: t1
         title:
           type: string
-          description: Title/description of the task
           example: Finish calculus problem set
         assigned_to:
           type: string
-          description: ID of the team member this task is assigned to
           example: anna
         status:
           type: string
-          description: Current status of the task
           enum:
             - pending
             - done
@@ -543,12 +715,10 @@ components:
         deadline:
           type: string
           format: date-time
-          description: Deadline for completing the task (ISO 8601 format)
           example: "2026-09-12T23:59:00Z"
 
     Deadline:
       type: object
-      description: A deadline or calendar event with associated task information
       required:
         - id
         - title
@@ -558,19 +728,15 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for the deadline/task
           example: t1
         title:
           type: string
-          description: Title of the deadline/task
           example: Finish calculus problem set
         assigned_to:
           type: string
-          description: ID of the team member responsible
           example: anna
         status:
           type: string
-          description: Current status of the task
           enum:
             - pending
             - done
@@ -579,12 +745,10 @@ components:
         deadline:
           type: string
           format: date-time
-          description: The deadline date and time (ISO 8601 format)
           example: "2026-09-12T23:59:00Z"
 
     ActivityLog:
       type: object
-      description: A record of study or work activity for a team member
       required:
         - member_id
         - activity_date
@@ -592,22 +756,18 @@ components:
       properties:
         member_id:
           type: string
-          description: ID of the team member who completed this activity
           example: anna
         activity_date:
           type: string
           format: date-time
-          description: When the activity occurred (ISO 8601 format)
           example: "2026-09-07T00:00:00Z"
         minutes_studied:
           type: integer
-          description: Duration of the activity in minutes
           example: 30
           minimum: 0
 
     Flashcard:
       type: object
-      description: A single flashcard with a question and answer
       required:
         - id
         - deck_id
@@ -616,24 +776,19 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for the flashcard
           example: f1
         deck_id:
           type: string
-          description: ID of the deck this card belongs to
           example: d1
         question:
           type: string
-          description: The question side of the flashcard
           example: What is a hash table?
         answer:
           type: string
-          description: The answer side of the flashcard
           example: A data structure that maps keys to values for O(1) average lookup
 
     FlashcardDeck:
       type: object
-      description: A deck of flashcards with all associated cards
       required:
         - id
         - title
@@ -642,34 +797,33 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier for the deck
           example: d1
         title:
           type: string
-          description: Title of the flashcard deck
           example: Data Structures Basics
         owner_id:
           type: string
-          description: ID of the user who created this deck
           example: anna
         shared_with_group:
           type: string
-          description: ID of the group this deck is shared with, derived from the owner's group when the deck is marked shared (nullable)
+          description: >-
+            ID of the group this deck is shared with, derived from the owner's group_id
+            when the deck's shared flag is set; null if the deck is not shared. The
+            database stores only a boolean flag (shared_with_group TINYINT(1)) — this
+            field is computed at query time from the owner's own group_id, per the
+            Week 5 CONTRACT_DEVIATIONS.md decision.
           example: g1
           nullable: true
         cards:
           type: array
-          description: Array of all flashcards in this deck
           items:
             $ref: '#/components/schemas/Flashcard'
 
     Error:
       type: object
-      description: Standard error response
       required:
         - error
       properties:
         error:
           type: string
-          description: Human-readable error message
           example: Failed to fetch members

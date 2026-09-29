@@ -7,13 +7,25 @@ const VALID_STATUSES = ['pending', 'done', 'late'];
 // GET /api/tasks
 router.get('/', async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, assignee } = req.query;
     let query = 'SELECT id, title, assigned_to, status, deadline FROM tasks';
     const params = [];
+    const conditions = [];
 
+    // Status filter - just pass through (empty result if no matches)
     if (status) {
-      query += ' WHERE status = ?';
+      conditions.push('status = ?');
       params.push(status);
+    }
+
+    // Assignee filter
+    if (assignee) {
+      conditions.push('assigned_to = ?');
+      params.push(assignee);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     const [rows] = await pool.query(query, params);

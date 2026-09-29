@@ -9,6 +9,10 @@ router.get('/', async (req, res) => {
     const params = [];
 
     if (member) {
+      // Validate member parameter: should be alphanumeric (member IDs are simple like 'anna', 'ben')
+      if (!/^[a-zA-Z0-9]+$/.test(member)) {
+        return res.status(400).json({ error: 'Invalid member ID format' });
+      }
       query += ' WHERE member_id = ?';
       params.push(member);
     }

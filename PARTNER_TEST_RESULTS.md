@@ -98,7 +98,7 @@ SettleIn's API correctly implements the following endpoints:
 
 ### Cross-Testing Against Jua Kali's API
 
-**Status:** Jua Kali team unavailable for live testing during submission window
+**Status:** Live testing with Jua Kali not scheduled during this submission window
 
 **Testing Approach:** Created mock server implementing exact contract
 - **Mock Server:** `server/mock-juakali-server.js` (ESM)
@@ -137,7 +137,7 @@ Tests:       12 passed
 - **Resolution:** No fix needed; SettleIn's implementation is better than the test expected
 
 ### 2. Jua Kali Live Testing
-- **Status:** Could not reach partner for live testing (team unavailable)
+- **Status:** Live cross-testing not scheduled during this submission window
 - **Mitigation:** Mock server created and tests executed against it
 - **Recommendation:** When Jua Kali is available, run tests against their live API
 
@@ -148,7 +148,7 @@ Tests:       12 passed
 
 ## What Was Flagged
 - **SettleIn:** Week 4 test file has outdated endpoint path assumptions (ambiguity, not bug)
-- **Jua Kali:** Live testing unavailable; recommend follow-up validation when team is reachable
+- **Jua Kali:** Follow-up live testing recommended when teams can coordinate
 
 ---
 

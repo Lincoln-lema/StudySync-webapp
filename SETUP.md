@@ -30,7 +30,7 @@ CREATE TABLE members (
 );
 
 INSERT INTO members (id, name, initials, reliability) VALUES
-    ('anna', 'Anna', 'A', 95),
+    ('anna', 'Anna', 'AN', 85),
     ('ben', 'Ben', 'B', 80),
     ('clara', 'Clara', 'C', 90);
 ```
@@ -64,14 +64,16 @@ Adjust `DB_USER`/`DB_PASSWORD` if your local MySQL setup differs.
 ## 4. Run and test
 
 ```
-npm run dev
+npm start
 ```
+
+To restart automatically on file changes, use `npm run dev` instead.
 
 Confirm each endpoint works by visiting these in a browser:
 
 - `localhost:5000/api/members`
 - `localhost:5000/api/tasks`
-- `localhost:5000/api/deadlines`
+- `localhost:5000/api/deadlines?from=2026-09-01&to=2026-12-31` (`from` and `to` are required)
 - `localhost:5000/api/activity`
 - `localhost:5000/api/flashcards`
 

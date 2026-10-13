@@ -46,3 +46,15 @@
 ## Clean-clone check
 
 We cloned the committed code into a scratch folder, ran `npm install`, created a separate test database from `SETUP.md` and `schema_additions.sql` (with the database name changed only in the scratch copy), and started the server on port 5002. `GET /api/members`, `GET /api/tasks`, `GET /users/anna/reliability-score`, `GET /users/ghost/reliability-score`, `GET /api/deadlines`, and `GET /api/flashcards` all returned the responses shown in the README. The scratch database was then dropped. The clone used committed code only, so the uncommitted README and SETUP.md changes weren't part of this check.
+
+## Re-test of our README (after fixes)
+
+**Team:** Team 11 (FundiLink, `Wahome-M/Team_11-webapp`), outside our ring.
+
+**Result:** Success on the first request. `GET /api/members` returned `200 OK` with 10 members, at 23:59 EAT on 2026-10-13 (20:59 GMT).
+
+**Also checked:**
+- `GET /users/anna/reliability-score` returned `200`, matching the README example.
+- `GET /users/ghost/reliability-score` returned the JSON 404, and an unknown path returned the HTML 404, both as the README describes.
+
+**Remaining gap they reported:** a local setup from an older copy of `SETUP.md` gives Anna `A`/95, not `AN`/85. The current `SETUP.md` on `main` has `AN`/85, so the fix is in place. Their copy was out of date.

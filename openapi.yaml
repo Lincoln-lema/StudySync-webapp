@@ -449,7 +449,6 @@ paths:
       summary: Get deadlines and calendar events in a date range
       description: >-
         Retrieves all deadlines/calendar events between specified dates, useful for calendar and timeline views.
-        NOTE: not yet implemented on the server as of Week 6 — documented for planned future work.
       operationId: getCalendarEvents
       parameters:
         - name: from
@@ -518,7 +517,6 @@ paths:
       summary: Get activity history for a specific user
       description: >-
         Retrieves the study/work activity log for a user, showing when they studied and for how long.
-        NOTE: not yet implemented on the server as of Week 6 — documented for planned future work.
       operationId: getUserActivity
       parameters:
         - name: userId

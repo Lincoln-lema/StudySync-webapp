@@ -14,6 +14,9 @@ servers:
   - url: https://api.studysync.example.com
     description: Production server
 
+security:
+  - ApiKeyAuth: []
+
 tags:
   - name: Members
     description: Team member information and reliability scores
@@ -50,6 +53,10 @@ paths:
                   reliability: 95
                   group_id: g1
                   group_name: Study Group Alpha
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch members
           content:
@@ -105,6 +112,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to create member
           content:
@@ -158,12 +169,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: Member not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to update member
           content:
@@ -184,12 +199,16 @@ paths:
       responses:
         '204':
           description: Member deleted
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: Member not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to delete member
           content:
@@ -223,6 +242,8 @@ paths:
                 user_id: anna
                 user_name: Anna
                 reliability_score: 95
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: User not found
           content:
@@ -231,6 +252,8 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: User not found
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch reliability score
           content:
@@ -296,6 +319,10 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: Invalid status value. Must be pending, done, or late
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch tasks
           content:
@@ -353,6 +380,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to create task
           content:
@@ -403,12 +434,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: Task not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to update task
           content:
@@ -429,12 +464,16 @@ paths:
       responses:
         '204':
           description: Task deleted
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: Task not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to delete task
           content:
@@ -480,6 +519,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch calendar events
           content:
@@ -503,6 +546,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Deadline'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch deadlines
           content:
@@ -534,12 +581,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ActivityLog'
+        '401':
+          description: Unauthorized - Missing or invalid API key
         '404':
           description: User not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch activity data
           content:
@@ -576,6 +627,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch activity data
           content:
@@ -622,6 +677,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Missing or invalid API key
+        '429':
+          description: Too Many Requests - Rate limit exceeded
         '500':
           description: Server error - unable to fetch flashcard decks
           content:
@@ -630,6 +689,11 @@ paths:
                 $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
   schemas:
     Member:
       type: object

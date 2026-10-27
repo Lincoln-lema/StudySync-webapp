@@ -4,6 +4,7 @@
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: '⊞', label: 'Dashboard' },
+    { key: 'study-spot', icon: '🏠', label: 'Study Spots' },
   { key: 'members', icon: '◍', label: 'Members' },
   { key: 'group', icon: '◈', label: 'Group View' },
   { key: 'heatmap', icon: '▦', label: 'Effort Heatmap' },

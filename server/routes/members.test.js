@@ -5,16 +5,18 @@ afterAll(async () => {
   await require('../db').end();
 });
 
+const key = process.env.API_KEYS.split(',')[0].trim();
+
 describe('GET /api/members', () => {
   it('returns 200 and an array of members', async () => {
-    const res = await request(app).get('/api/members');
+    const res = await request(app).get('/api/members').set('X-API-Key', key);
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
   });
 
   it('each member has the expected fields', async () => {
-    const res = await request(app).get('/api/members');
+    const res = await request(app).get('/api/members').set('X-API-Key', key);
     const member = res.body[0];
     expect(member).toHaveProperty('id');
     expect(member).toHaveProperty('name');
@@ -23,7 +25,7 @@ describe('GET /api/members', () => {
   });
 
   it('reliability is a number between 0 and 100', async () => {
-    const res = await request(app).get('/api/members');
+    const res = await request(app).get('/api/members').set('X-API-Key', key);
     res.body.forEach((m) => {
       expect(typeof m.reliability).toBe('number');
       expect(m.reliability).toBeGreaterThanOrEqual(0);

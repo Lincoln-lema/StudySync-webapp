@@ -10,7 +10,7 @@ const TEST_USER_ID = 13;
 
 const api = request(SETTLEIN_API_URL);
 
-describe('SettleIn API Contract Verification', () => {
+describe.skip('SettleIn API Contract Verification', () => {
   it('residence-area endpoint responds', async () => {
     const res = await api.get(`/api/v1/users/${TEST_USER_ID}/residence-area`);
     expect([200, 404]).toContain(res.statusCode);

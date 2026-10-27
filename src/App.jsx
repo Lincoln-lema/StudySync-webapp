@@ -76,6 +76,7 @@ import Report from './pages/Report';
 import Flashcards from './pages/Flashcards';
 import Calendar from './pages/Calendar';
 import Members from './pages/Members';
+import StudySpot from './pages/StudySpot';
 
 function App() {
   const [data, setData] = useLocalStorage('studysync-data', mockData);
@@ -94,6 +95,7 @@ function App() {
 
   let currentPage;
   if (page === 'dashboard') currentPage = <Dashboard data={data} setPage={setPage} />;
+  else if (page === 'study-spot') currentPage = <StudySpot />; 
   else if (page === 'group') currentPage = <Group data={data} setData={setData} showToast={showToast} />;
   else if (page === 'heatmap') currentPage = <Heatmap data={data} />;
   else if (page === 'nudge') currentPage = <Nudge data={data} setData={setData} showToast={showToast} />;

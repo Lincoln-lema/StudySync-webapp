@@ -5,15 +5,17 @@ afterAll(async () => {
   await require('../db').end();
 });
 
+const key = process.env.API_KEYS.split(',')[0].trim();
+
 describe('GET /api/flashcards', () => {
   it('returns 200 and an array of decks', async () => {
-    const res = await request(app).get('/api/flashcards');
+    const res = await request(app).get('/api/flashcards').set('X-API-Key', key);
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
 
   it('each deck has a title and a cards array', async () => {
-    const res = await request(app).get('/api/flashcards');
+    const res = await request(app).get('/api/flashcards').set('X-API-Key', key);
     res.body.forEach((deck) => {
       expect(deck).toHaveProperty('title');
       expect(Array.isArray(deck.cards)).toBe(true);
@@ -21,7 +23,7 @@ describe('GET /api/flashcards', () => {
   });
 
   it('each card has a question and an answer', async () => {
-    const res = await request(app).get('/api/flashcards');
+    const res = await request(app).get('/api/flashcards').set('X-API-Key', key);
     res.body.forEach((deck) => {
       deck.cards.forEach((card) => {
         expect(card).toHaveProperty('question');

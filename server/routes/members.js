@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const { checkMaxLengths, MEMBER_LIMITS } = require('../validation');
 
 // GET /api/members
 router.get('/', async (req, res) => {
@@ -43,6 +44,10 @@ router.post('/', async (req, res) => {
   }
   if (reliability !== undefined && (reliability < 0 || reliability > 100)) {
     return res.status(400).json({ error: 'reliability must be between 0 and 100' });
+  }
+  const tooLong = checkMaxLengths({ id, name, initials, group_id }, MEMBER_LIMITS);
+  if (tooLong) {
+    return res.status(400).json({ error: tooLong });
   }
 
   // --- Nothing gets written until every check above passes ---
@@ -88,6 +93,10 @@ router.put('/:id', async (req, res) => {
   }
   if (reliability !== undefined && (reliability < 0 || reliability > 100)) {
     return res.status(400).json({ error: 'reliability must be between 0 and 100' });
+  }
+  const tooLong = checkMaxLengths({ name, initials, group_id }, MEMBER_LIMITS);
+  if (tooLong) {
+    return res.status(400).json({ error: tooLong });
   }
 
   try {

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const { checkMaxLengths, TASK_LIMITS } = require('../validation');
 
 const VALID_STATUSES = ['pending', 'done', 'late'];
 
@@ -60,6 +61,10 @@ router.post('/', async (req, res) => {
   if (id.trim() === '' || title.trim() === '' || assigned_to.trim() === '') {
     return res.status(400).json({ error: 'id, title, and assigned_to cannot be empty' });
   }
+  const tooLong = checkMaxLengths({ id, title }, TASK_LIMITS);
+  if (tooLong) {
+    return res.status(400).json({ error: tooLong });
+  }
 
   try {
     // Check the assignee actually exists before creating the task
@@ -103,6 +108,10 @@ router.patch('/:id', async (req, res) => {
   }
   if (deadline !== undefined && isNaN(Date.parse(deadline))) {
     return res.status(400).json({ error: 'deadline must be a valid date' });
+  }
+  const tooLong = checkMaxLengths({ title }, TASK_LIMITS);
+  if (tooLong) {
+    return res.status(400).json({ error: tooLong });
   }
 
   try {

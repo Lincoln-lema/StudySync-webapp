@@ -11,7 +11,8 @@ const VALID_KEYS = (process.env.API_KEYS || '')
 function requireApiKey(req, res, next) {
   const key = req.get('X-API-Key');
   if (!key || !VALID_KEYS.includes(key)) {
-    return res.status(401).json({ message: 'Missing or invalid API key' });
+    // `error` matches the contract's Error schema; `message` is kept for existing consumers.
+    return res.status(401).json({ error: 'Missing or invalid API key', message: 'Missing or invalid API key' });
   }
   req.apiKey = key;
   next();

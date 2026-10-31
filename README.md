@@ -43,6 +43,7 @@ Example response:
 
 ```json
 {
+  "error": "Too many requests",
   "message": "Too many requests",
   "retryAfter": 60
 }
@@ -596,10 +597,12 @@ Authentication errors and rate-limit errors use the `message` field.
 
 | Scenario | Status | Response body |
 |---|---:|---|
-| Request without a valid `X-API-Key` | `401` | `{"message":"Missing or invalid API key"}` |
-| More than 100 requests per minute | `429` | `{"message":"Too many requests","retryAfter":60}` |
+| Request without a valid `X-API-Key` | `401` | `{"error":"Missing or invalid API key","message":"Missing or invalid API key"}` |
+| More than 100 requests per minute | `429` | `{"error":"Too many requests","message":"Too many requests","retryAfter":60}` |
 | `POST /api/members` with no body | `400` | `{"error":"id, name, and initials are required"}` |
 | `POST /api/tasks` with required fields missing | `400` | `{"error":"id, title, assigned_to, and deadline are required"}` |
+| `POST /api/members` with an `id` over 10 characters | `400` | `{"error":"id must be at most 10 characters"}` |
+| `POST /api/tasks` with a `title` over 150 characters | `400` | `{"error":"title must be at most 150 characters"}` |
 | `GET /api/deadlines?from=2026-09-01` without `to` | `400` | `{"error":"Both from and to are required for date range query"}` |
 | `GET /api/deadlines?from=bad&to=2026-12-31` | `400` | `{"error":"Invalid date format. Use ISO 8601 format (e.g., 2026-09-01)"}` |
 | `PUT /api/members/nobody` for a nonexistent member | `404` | `{"error":"Member not found"}` |
@@ -614,13 +617,21 @@ Check the HTTP status code first when handling errors. A `2xx` status indicates 
 
 ## Known Limitations
 
-### 1. ID Length
+### 1. Field Length Limits
 
-IDs are limited to **10 characters** because the database column is defined as `VARCHAR(10)`.
+Text fields are limited to the size of their database columns:
 
-Longer IDs may be silently truncated when saved. The API may still return `201 Created` with the original, untruncated ID, causing subsequent lookups to fail.
+| Field | Maximum length |
+|---|---:|
+| Member `id`, `group_id` | 10 |
+| Member `name` | 100 |
+| Member `initials` | 5 |
+| Task `id` | 10 |
+| Task `title` | 150 |
 
-**Recommendation:** Keep all IDs at 10 characters or fewer.
+Longer values are rejected with `400 Bad Request` and nothing is written, for example `{"error":"id must be at most 10 characters"}`. (Before this check existed, over-long values were silently truncated while the API still returned `201`, which made later lookups fail.)
+
+**Recommendation:** Keep IDs at 10 characters or fewer.
 
 ### 2. Date-Only Deadline Conversion
 

@@ -54,9 +54,9 @@ paths:
                   group_id: g1
                   group_name: Study Group Alpha
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch members
           content:
@@ -83,12 +83,18 @@ paths:
               properties:
                 id:
                   type: string
+                  minLength: 1
+                  maxLength: 10
                   example: dan
                 name:
                   type: string
+                  minLength: 1
+                  maxLength: 100
                   example: Dan
                 initials:
                   type: string
+                  minLength: 1
+                  maxLength: 5
                   example: D
                 reliability:
                   type: integer
@@ -97,6 +103,7 @@ paths:
                   maximum: 100
                 group_id:
                   type: string
+                  maxLength: 10
                   nullable: true
                   example: g1
       responses:
@@ -113,9 +120,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to create member
           content:
@@ -147,14 +154,19 @@ paths:
               properties:
                 name:
                   type: string
+                  minLength: 1
+                  maxLength: 100
                 initials:
                   type: string
+                  minLength: 1
+                  maxLength: 5
                 reliability:
                   type: integer
                   minimum: 0
                   maximum: 100
                 group_id:
                   type: string
+                  maxLength: 10
                   nullable: true
       responses:
         '200':
@@ -170,7 +182,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Member not found
           content:
@@ -178,7 +190,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to update member
           content:
@@ -200,7 +212,7 @@ paths:
         '204':
           description: Member deleted
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Member not found
           content:
@@ -208,7 +220,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to delete member
           content:
@@ -243,7 +255,7 @@ paths:
                 user_name: Anna
                 reliability_score: 95
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: User not found
           content:
@@ -253,7 +265,7 @@ paths:
               example:
                 error: User not found
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch reliability score
           content:
@@ -320,9 +332,9 @@ paths:
               example:
                 error: Invalid status value. Must be pending, done, or late
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch tasks
           content:
@@ -350,9 +362,13 @@ paths:
               properties:
                 id:
                   type: string
+                  minLength: 1
+                  maxLength: 10
                   example: t4
                 title:
                   type: string
+                  minLength: 1
+                  maxLength: 150
                   example: Review lecture notes
                 assigned_to:
                   type: string
@@ -381,9 +397,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to create task
           content:
@@ -410,9 +426,12 @@ paths:
             schema:
               type: object
               description: At least one field must be provided
+              minProperties: 1
               properties:
                 title:
                   type: string
+                  minLength: 1
+                  maxLength: 150
                 assigned_to:
                   type: string
                 status:
@@ -435,7 +454,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Task not found
           content:
@@ -443,7 +462,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to update task
           content:
@@ -465,7 +484,7 @@ paths:
         '204':
           description: Task deleted
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Task not found
           content:
@@ -473,7 +492,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to delete task
           content:
@@ -520,9 +539,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch calendar events
           content:
@@ -547,9 +566,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Deadline'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch deadlines
           content:
@@ -582,7 +601,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ActivityLog'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: User not found
           content:
@@ -590,7 +609,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch activity data
           content:
@@ -628,9 +647,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch activity data
           content:
@@ -678,9 +697,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized - Missing or invalid API key
+          $ref: '#/components/responses/Unauthorized'
         '429':
-          description: Too Many Requests - Rate limit exceeded
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           description: Server error - unable to fetch flashcard decks
           content:
@@ -694,6 +713,37 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+  responses:
+    Unauthorized:
+      description: Unauthorized - Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Missing or invalid API key
+            message: Missing or invalid API key
+    TooManyRequests:
+      description: Too Many Requests - Rate limit exceeded (100 requests per minute per API key)
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+              - type: object
+                properties:
+                  retryAfter:
+                    type: integer
+                    description: Seconds to wait before retrying (same value as the Retry-After header)
+          example:
+            error: Too many requests
+            message: Too many requests
+            retryAfter: 60
   schemas:
     Member:
       type: object
@@ -706,9 +756,11 @@ components:
       properties:
         id:
           type: string
+          maxLength: 10
           example: anna
         name:
           type: string
+          maxLength: 100
           example: Anna
         initials:
           type: string
@@ -760,9 +812,11 @@ components:
       properties:
         id:
           type: string
+          maxLength: 10
           example: t1
         title:
           type: string
+          maxLength: 150
           example: Finish calculus problem set
         assigned_to:
           type: string
@@ -790,9 +844,11 @@ components:
       properties:
         id:
           type: string
+          maxLength: 10
           example: t1
         title:
           type: string
+          maxLength: 150
           example: Finish calculus problem set
         assigned_to:
           type: string
@@ -889,3 +945,7 @@ components:
         error:
           type: string
           example: Failed to fetch members
+        message:
+          type: string
+          description: Same text as `error`. Only present on 401 and 429 responses, kept for consumers written before Week 9.
+          example: Missing or invalid API key

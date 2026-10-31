@@ -23,6 +23,7 @@ function rateLimit({ windowMs, max }) {
       const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
       res.set('Retry-After', String(retryAfter));
       return res.status(429).json({ 
+        error: 'Too many requests',
         message: 'Too many requests', 
         retryAfter 
       });

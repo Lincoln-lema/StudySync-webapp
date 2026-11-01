@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 const API_BASE = 'http://localhost:5000/api/properties';
 // We must send our StudySync API key to talk to our own backend
-const LOCAL_API_KEY = '22b0c9ec0c8f48c84cbb9137da374ff4ed31a9bef1197448'; 
+const LOCAL_API_KEY = '<our key>'; 
 
 export default function StudySpot() {
   const [amenities, setAmenities] = useState(null);

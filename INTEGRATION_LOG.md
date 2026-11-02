@@ -46,7 +46,7 @@ We tested the following failure scenarios to ensure our integration handles erro
 - **Status:** Providing our live tunnel URL and our Week 9 API key to Jua Kali so they can consume our endpoints. Monitoring our terminal for any `401` (auth errors) or `404` (wrong paths) from their team.
 
 ### Update (Week 10, after the first Jua Kali hand-off)
-- **Key rotation:** the key committed in bug #4 is retired. Jua Kali's key is a separate entry in `API_KEYS` and was not changed by the rotation. Still to confirm: that Jua Kali's calls return 200 and appear in our server log.
+- **Key rotation:** the key committed in bug #4 is retired. Jua Kali's key is a separate entry in `API_KEYS` and was not changed by the rotation. Confirmed on 2 Nov 2026: Jua Kali called our API through the tunnel with their own key after the rotation and got `200 OK`.
 - **Contract changes for Jua Kali:** none of the existing paths, fields, status codes or the key header changed. `openapi.yaml` 1.2.0 corrects three documentation errors (see `CONTRACT_DEVIATIONS.md`) and adds `/api/properties`, `/api/properties/{id}/study-amenities` and `/api/bookings` as new, additive endpoints. Jua Kali does not need to call any of them.
 - **Tunnel URL** changes every time `cloudflared` restarts. Any restart before the demo means sending Jua Kali the new URL.
 - **Test data:** bookings created while testing were cancelled before the demo.

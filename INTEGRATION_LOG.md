@@ -16,6 +16,9 @@
 | 1 | `401 Unauthorized` when frontend tried to fetch partner data from our own backend | Week 9 security implementation now requires an `X-API-Key` header on all routes, but the frontend fetch request wasn't sending it. | Updated the frontend `StudySpot.jsx` component to include our own `X-API-Key` in the fetch headers. | Mine, fixed by me |
 | 2 | `502 Bad Gateway` on our backend, and frontend displayed "Partner data is unavailable". Terminal logged `SettleIn amenities call failed: ENOTFOUND` | SettleIn's Cloudflare tunnel went offline mid-lab (Cloudflare Error 1033). | Pivoted to a local stand-in (`mock-settlein.js`) on port 4000 using the exact JSON shape from their contract. Updated `SETTLEIN_URL` in `.env` to point to the mock. | Neither—infra outage; worked around by me |
 | 3 | Anticipated bug: Contract field mismatch. | SettleIn's earlier undocumented list route returned flat `quiet_hours_start` fields, but their official contract specified a nested `quiet_hours` object. | Built defensive normalization in `server/routes/properties.js` to gracefully handle both the nested object and the flat fallback. | Mine, fixed by me |
+| 4 | A real API key was committed in source. `StudySpot.jsx` had our key hard-coded as a fix for bug #1, so it was in git history (commit `861c329`) and in the bundled frontend. | Fixing the 401 by pasting a key into the component put a secret in version control. | Removed the hard-coded key. The frontend now reads `VITE_API_KEY` from a gitignored root `.env`, using a separate web-client key. The old key was removed from `API_KEYS` in `server/.env`, so it now returns 401. It stays visible in git history, so it must be treated as burned. | Mine, fixed by me |
+| 5 | Our OpenAPI contract disagreed with the code. The spec listed `groupId` filters on tasks and flashcards and a tasks 400 that the code never had, and treated `from`/`to` on `/calendar-events` as required when the code accepts both-or-neither. | Contract was written before the routes and never reconciled. | Corrected `openapi.yaml` to describe the real behaviour (see `CONTRACT_DEVIATIONS.md`, Week 10) and bumped it to 1.2.0. Regenerated `docs/index.html`. | Mine, fixed by me |
+| 6 | The frontend looked finished but showed mock data: members, tasks, dashboard, calendar and heatmap were hard-coded, and Study Spots was view-only. | The prototype predated the backend. | Wired those pages to our own API (`src/api.js`) and added study-spot booking (`/api/bookings`) with partner-aware validation. | Mine, fixed by me |
 
 ## Part D: Failure Handling Tests
 
@@ -30,10 +33,20 @@ We tested the following failure scenarios to ensure our integration handles erro
    - **Action:** Tested a request for a non-existent property (`/api/properties/nope/study-amenities`).
    - **Result:** The backend correctly intercepted SettleIn's `404 Not Found`, and returned a clean `404` to our frontend.
 
-3. **Recovery:**
+3. **Partner failure while booking (Week 10):**
+   - **Action:** Tried to create a booking with the stand-in stopped.
+   - **Result:** `POST /api/bookings` returned `502` ("Partner data unavailable, cannot confirm this property right now") and wrote nothing, because we validate guests and quiet hours against SettleIn's data before accepting a booking.
+
+4. **Recovery:**
    - **Action:** Restarted the SettleIn stand-in.
    - **Result:** Without changing any code, the frontend successfully recovered and displayed the partner data upon the next page load.
 
 ## Part E: Downstream Consumer (Jua Kali)
 - **Action:** Started a `cloudflared` tunnel to expose our StudySync API to our downstream partner.
 - **Status:** Providing our live tunnel URL and our Week 9 API key to Jua Kali so they can consume our endpoints. Monitoring our terminal for any `401` (auth errors) or `404` (wrong paths) from their team.
+
+### Update (Week 10, after the first Jua Kali hand-off)
+- **Key rotation:** the key committed in bug #4 is retired. Jua Kali's key is a separate entry in `API_KEYS` and was not changed by the rotation. Still to confirm: that Jua Kali's calls return 200 and appear in our server log.
+- **Contract changes for Jua Kali:** none of the existing paths, fields, status codes or the key header changed. `openapi.yaml` 1.2.0 corrects three documentation errors (see `CONTRACT_DEVIATIONS.md`) and adds `/api/properties`, `/api/properties/{id}/study-amenities` and `/api/bookings` as new, additive endpoints. Jua Kali does not need to call any of them.
+- **Tunnel URL** changes every time `cloudflared` restarts. Any restart before the demo means sending Jua Kali the new URL.
+- **Test data:** bookings created while testing were cancelled before the demo.

@@ -61,3 +61,37 @@ These remain documented in the contract as planned/future work per `API_NEEDS.md
 - Write endpoints now reject over-long values with 400 instead of letting the database truncate them silently: member id and group_id 10, name 100, initials 5; task id 10, title 150. The openapi.yaml request bodies declare the same minLength/maxLength, plus minProperties: 1 on PATCH /api/tasks/{id}.
 - 401 and 429 responses now include `error` as well as `message`, so they match the contract's Error schema. `message` is kept for existing consumers. The contract documents both through shared components.responses (Unauthorized, TooManyRequests).
 - openapi.yaml also declares maxLength on the Member, Task and Deadline response schemas, with the same limits.
+
+---
+
+# Contract Deviations — Week 10
+
+`openapi.yaml` is now version **1.2.0**. No existing path, field, status code or auth rule changed for consumers. The first section corrects the contract to match the code; the second adds new endpoints.
+
+## Corrections (contract now matches implementation)
+
+- `GET /api/tasks`: removed the `groupId` query parameter and its 400 response. The route has never filtered by group or returned a 400.
+- `GET /api/flashcards`: removed the `groupId` query parameter and its 400 response, for the same reason.
+- `GET /calendar-events`: `from` and `to` are now documented as optional but must be supplied together. Sending only one returns 400 (`Both from and to are required for date range query`). With neither, all deadlines are returned. The code already behaved this way.
+
+## New endpoints (additive)
+
+- `GET /api/properties` — lists properties from the upstream partner (SettleIn).
+- `GET /api/properties/{id}/study-amenities` — study amenities for one property. The response is normalized: quiet hours always arrive as a nested `quiet_hours` object, numbers and booleans are coerced, and a `source` field says `live` or `stand-in`. A partner 404 is passed through as 404. If the partner is down or returns an unexpected shape, the response is `502` with `{"error":"Partner data unavailable"}`.
+- `GET /api/bookings` — optional filters `memberId`, `propertyId`, and `status` (`confirmed` (default), `cancelled` or `all`).
+- `POST /api/bookings` — required: `property_id`, `booked_by` (an existing member id), `session_date` (YYYY-MM-DD, not in the past), `start_time`, `end_time` (HH:MM, end after start). Optional: `guests` (default 1) and `note` (max 200 characters). Before saving, the server fetches the property's amenities from SettleIn and rejects the booking with 400 if guests exceed `max_study_guests` or the session overlaps enforced quiet hours (including windows that cross midnight). Returns 201, 404 for an unknown property, 409 if another confirmed booking overlaps the slot, and 502 if the partner cannot be reached. Nothing is written in the 502 case.
+- `DELETE /api/bookings/{id}` — cancels a booking (sets `status` to `cancelled`, the row is kept) and returns `{id, status}`. 404 if the booking does not exist.
+
+New components: `PartnerUnavailable` response and `Property`, `StudyAmenities`, `Booking` schemas.
+
+## Behaviour note
+
+On the properties routes, errors now use `{"error": "..."}` instead of `{"message": "..."}`, matching the contract's Error schema and the rest of the API. Only our own frontend calls these routes.
+
+## Database change
+
+New table `study_bookings`. Teammates run `node scripts/migrate-bookings.js` from `server/` once after pulling.
+
+## Still read-only or local (not deviations, flagged for visibility)
+
+There is no write endpoint for activity logging, flashcard decks or nudges. In the frontend, flashcard decks are demo data and the nudge log is stored in the browser only.

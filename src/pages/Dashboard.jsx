@@ -1,66 +1,42 @@
-import { useEffect, useState } from 'react';
-import { fetchMembers, fetchTasks } from '../api';
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
-function Dashboard({ data, setPage }) {
-  const { group, tasks } = data;
+function Dashboard({ live, currentUser, setPage }) {
+  const { members, tasks, loading, error } = live;
+  const nameOf = (id) => (members.find((m) => m.id === id) || {}).name || id;
+  const groupName = (members.find((m) => m.group_name) || {}).group_name || 'StudySync';
 
-  // Live data from the Express API. Falls back to local data when the
-  // backend isn't running so the app still works offline.
-  const [live, setLive] = useState(null);
-  const [liveError, setLiveError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const total = tasks.length;
+  const done = tasks.filter((t) => t.status === 'done').length;
+  const late = tasks.filter((t) => t.status === 'late').length;
+  const pending = tasks.filter((t) => t.status === 'pending').length;
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchMembers(), fetchTasks()])
-      .then(([members, rows]) => {
-        if (cancelled) return;
-        setLive({ members, tasks: rows });
-      })
-      .catch((err) => {
-        if (!cancelled) setLiveError(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const members = live ? live.members : group.members;
-  const allTasks = live ? live.tasks : tasks;
-
-  // Counts for the stat cards - same filter() logic as the original.
-  const total = allTasks.length;
-  const done = allTasks.filter((t) => t.status === 'done').length;
-  const late = allTasks.filter((t) => t.status === 'late').length;
-  const pending = allTasks.filter((t) => t.status === 'pending').length;
-
-  // Upcoming = not done, sorted soonest first.
-  const upcoming = allTasks
+  const upcoming = tasks
     .filter((t) => t.status !== 'done')
-    .sort((a, b) => new Date(a.due) - new Date(b.due));
+    .sort((a, b) => (a.due || '').localeCompare(b.due || ''));
+  const nextDue = upcoming.length ? upcoming[0].due : '';
 
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Good morning, Anna.</h2>
+          <h2 className="text-2xl font-bold text-slate-900">
+            {greeting()}{currentUser ? `, ${currentUser.name}` : ''}.
+          </h2>
           <p className="text-sm text-slate-500 mt-1">
-            {group.name} · {members.length} members · Due {group.dueDate}
+            {groupName} · {members.length} members{nextDue ? ` · Next due ${nextDue}` : ''}
           </p>
           <span
             className={
               'inline-block mt-2 text-xs font-semibold px-3 py-1 rounded-full ' +
-              (live
-                ? 'bg-sync-green/10 text-sync-green'
-                : liveError
-                ? 'bg-warning-amber/10 text-warning-amber'
-                : 'bg-slate-100 text-slate-500')
+              (loading ? 'bg-slate-100 text-slate-500' : error ? 'bg-warning-amber/10 text-warning-amber' : 'bg-sync-green/10 text-sync-green')
             }
           >
-            {loading ? 'Connecting to database…' : live ? '● Connected to MySQL' : '● Offline — showing local data'}
+            {loading ? 'Connecting to database…' : error ? '● Offline — cannot reach the server' : '● Connected to MySQL'}
           </span>
         </div>
         <button
@@ -71,7 +47,6 @@ function Dashboard({ data, setPage }) {
         </button>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="text-3xl font-bold text-primary">{total}</div>
@@ -92,9 +67,14 @@ function Dashboard({ data, setPage }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Member list */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="text-xs font-semibold text-slate-500 uppercase mb-4">Team Members</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-xs font-semibold text-slate-500 uppercase">Team Members</div>
+            <button onClick={() => setPage('members')} className="text-xs font-semibold text-primary">Manage →</button>
+          </div>
+          {members.length === 0 && !loading && (
+            <p className="text-sm text-slate-500">No members yet. Add your first member on the Members page.</p>
+          )}
           {members.map((m) => (
             <div key={m.id} className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
@@ -103,7 +83,6 @@ function Dashboard({ data, setPage }) {
                 </div>
                 <span className="text-sm font-medium text-slate-800">{m.name}</span>
               </div>
-              {/* reliability badge: green >70, amber 40-70, red <40 */}
               <span
                 className={
                   'text-xs font-semibold px-3 py-1 rounded-full ' +
@@ -120,7 +99,6 @@ function Dashboard({ data, setPage }) {
           ))}
         </div>
 
-        {/* Upcoming tasks */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="text-xs font-semibold text-slate-500 uppercase mb-4">Upcoming Tasks</div>
           {upcoming.length === 0 && <p className="text-sm text-slate-500">Nothing pending 🎉</p>}
@@ -128,7 +106,7 @@ function Dashboard({ data, setPage }) {
             <div key={t.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
               <div>
                 <div className="text-sm font-medium text-slate-800">{t.title}</div>
-                <div className="text-xs text-slate-500">{t.owner} · due {t.due}</div>
+                <div className="text-xs text-slate-500">{nameOf(t.owner)} · due {t.due || 'no date'}</div>
               </div>
               <span
                 className={

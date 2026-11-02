@@ -12,6 +12,7 @@ const deadlinesRouter = require('./routes/deadlines');
 const activityRouter = require('./routes/activity');
 const flashcardsRouter = require('./routes/flashcards');
 const propertiesRouter = require('./routes/properties');
+const bookingsRouter = require('./routes/bookings');
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,7 @@ app.use('/api/deadlines', deadlinesRouter);
 app.use('/api/activity', activityRouter);
 app.use('/api/flashcards', flashcardsRouter);
 app.use('/api/properties', propertiesRouter);
+app.use('/api/bookings', bookingsRouter);
 
 // Contract paths for downstream partners per openapi.yaml
 app.use('/users', usersRouter);

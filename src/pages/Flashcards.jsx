@@ -55,7 +55,7 @@ function Flashcards({ data, setData, showToast }) {
                 {deck.shared ? 'Shared' : 'Private'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mb-2">{deck.cards.length} cards</p>
+            <p className="text-xs text-slate-500 mb-2">{deck.cards.length} {deck.cards.length === 1 ? 'card' : 'cards'}</p>
             <button
               onClick={() => setOpenDeck(openDeck === deck.id ? null : deck.id)}
               className="text-xs text-primary font-semibold"

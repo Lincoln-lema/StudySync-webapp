@@ -7,21 +7,18 @@ const PRESET_MESSAGES = [
   'Deadline is coming up soon',
 ];
 
-function Nudge({ data, setData, showToast }) {
+function Nudge({ data, setData, members, showToast }) {
   const { nudges } = data;
-  const [target, setTarget] = useState('Anna');
+  const [target, setTarget] = useState('');
   const [message, setMessage] = useState(PRESET_MESSAGES[0]);
+  const chosen = target || (members[0] ? members[0].name : '');
 
   function sendNudge(e) {
     e.preventDefault();
-    const newNudge = {
-      id: 'n' + Date.now(),
-      message,
-      target,
-      sentAt: new Date().toISOString(),
-    };
+    if (!chosen) return;
+    const newNudge = { id: 'n' + Date.now(), message, target: chosen, sentAt: new Date().toISOString() };
     setData({ ...data, nudges: [newNudge, ...nudges] });
-    showToast('Nudge sent to ' + target + ' (anonymously)');
+    showToast('Nudge sent to ' + chosen + ' (anonymously)');
   }
 
   return (
@@ -37,13 +34,11 @@ function Nudge({ data, setData, showToast }) {
           <form onSubmit={sendNudge}>
             <label className="block text-xs text-slate-500 mb-1">Nudge Who?</label>
             <select
-              value={target}
+              value={chosen}
               onChange={(e) => setTarget(e.target.value)}
               className="w-full px-3 py-2 rounded border border-slate-300 text-sm mb-4"
             >
-              <option>Anna</option>
-              <option>Ben</option>
-              <option>Clara</option>
+              {members.map((m) => (<option key={m.id}>{m.name}</option>))}
             </select>
 
             <label className="block text-xs text-slate-500 mb-1">Message</label>
@@ -52,19 +47,22 @@ function Nudge({ data, setData, showToast }) {
               onChange={(e) => setMessage(e.target.value)}
               className="w-full px-3 py-2 rounded border border-slate-300 text-sm mb-4"
             >
-              {PRESET_MESSAGES.map((m) => (
-                <option key={m}>{m}</option>
-              ))}
+              {PRESET_MESSAGES.map((m) => (<option key={m}>{m}</option>))}
             </select>
 
-            <button type="submit" className="w-full py-2 rounded-lg bg-nudge-purple text-white text-sm font-semibold">
+            <button
+              type="submit"
+              disabled={!chosen}
+              className="w-full py-2 rounded-lg bg-nudge-purple text-white text-sm font-semibold disabled:opacity-50"
+            >
               Send Anonymous Nudge
             </button>
           </form>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="text-xs font-semibold text-slate-500 uppercase mb-4">Nudge Log</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Nudge Log</div>
+          <p className="text-[11px] text-slate-400 mb-4">Saved on this device only</p>
           {nudges.map((n) => (
             <div key={n.id} className="py-2 border-b border-slate-100 last:border-0">
               <div className="text-sm text-slate-700">"{n.message}"</div>

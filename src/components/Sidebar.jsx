@@ -1,10 +1,6 @@
-// This is a direct React version of your original sidebar. Instead of
-// data-page="dashboard" attributes read by document.querySelectorAll,
-// each nav item just calls setPage() when clicked.
-
 const NAV_ITEMS = [
   { key: 'dashboard', icon: '⊞', label: 'Dashboard' },
-    { key: 'study-spot', icon: '🏠', label: 'Study Spots' },
+  { key: 'study-spot', icon: '🏠', label: 'Study Spots' },
   { key: 'members', icon: '◍', label: 'Members' },
   { key: 'group', icon: '◈', label: 'Group View' },
   { key: 'heatmap', icon: '▦', label: 'Effort Heatmap' },
@@ -14,7 +10,7 @@ const NAV_ITEMS = [
   { key: 'calendar', icon: '▦', label: 'Calendar' },
 ];
 
-function Sidebar({ page, setPage, onReset }) {
+function Sidebar({ page, setPage, onReset, members, currentUser, onSelectUser }) {
   return (
     <aside className="w-56 flex-shrink-0 bg-sidebar-bg min-h-screen flex flex-col justify-between">
       <div>
@@ -44,18 +40,29 @@ function Sidebar({ page, setPage, onReset }) {
       <div className="px-5 py-5 border-t border-white/10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-sync-green flex items-center justify-center text-white text-xs font-bold">
-            AN
+            {currentUser ? currentUser.initials : '?'}
           </div>
-          <div>
-            <div className="text-sm font-bold text-white">Anna</div>
-            <div className="text-xs text-slate-500">Demo User</div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-white truncate">{currentUser ? currentUser.name : 'No members yet'}</div>
+            <div className="text-xs text-slate-500">Acting as</div>
           </div>
         </div>
+        {members.length > 0 && (
+          <select
+            value={currentUser ? currentUser.id : ''}
+            onChange={(e) => onSelectUser(e.target.value)}
+            className="w-full mb-3 rounded bg-white/10 text-white text-xs px-2 py-2 border border-white/10"
+          >
+            {members.map((m) => (
+              <option key={m.id} value={m.id} className="text-slate-900">{m.name}</option>
+            ))}
+          </select>
+        )}
         <button
           onClick={onReset}
           className="w-full text-xs text-danger-crimson border border-danger-crimson/30 rounded py-2 hover:bg-danger-crimson/10"
         >
-          ↺ Reset Data
+          ↺ Reset local data
         </button>
       </div>
     </aside>

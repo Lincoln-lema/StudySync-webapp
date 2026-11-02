@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: StudySync API
-  version: 1.1.0
+  version: 1.2.0
   description: A collaborative study management tool API for tracking tasks, deadlines, activity, and study materials
   contact:
     name: StudySync Team
@@ -28,6 +28,10 @@ tags:
     description: User activity history and study logs
   - name: Study Materials
     description: Flashcard decks and study materials
+  - name: Partner Integration
+    description: Server-side proxy to the upstream partner (SettleIn)
+  - name: Study Bookings
+    description: Book study sessions at partner properties
 
 paths:
   /api/members:
@@ -280,13 +284,13 @@ paths:
       tags:
         - Tasks
       summary: Get tasks with optional filtering
-      description: Retrieves all tasks, optionally filtered by status, group, or assignee
+      description: Retrieves all tasks, optionally filtered by status or assignee
       operationId: getTasks
       parameters:
         - name: status
           in: query
           required: false
-          description: Filter tasks by status (pending, done, late)
+          description: Filter tasks by status (pending, done, late). A value that matches no task returns an empty list.
           schema:
             type: string
             enum:
@@ -294,13 +298,6 @@ paths:
               - done
               - late
           example: pending
-        - name: groupId
-          in: query
-          required: false
-          description: Filter tasks by group ID
-          schema:
-            type: string
-          example: g1
         - name: assignee
           in: query
           required: false
@@ -323,14 +320,6 @@ paths:
                   assigned_to: anna
                   status: pending
                   deadline: "2026-09-12T23:59:00Z"
-        '400':
-          description: Invalid filter parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Invalid status value. Must be pending, done, or late
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -507,18 +496,21 @@ paths:
       summary: Get deadlines and calendar events in a date range
       description: >-
         Retrieves all deadlines/calendar events between specified dates, useful for calendar and timeline views.
+        Send both `from` and `to`, or neither (neither returns every deadline). Sending only one returns 400.
       operationId: getCalendarEvents
       parameters:
         - name: from
           in: query
-          required: true
+          required: false
+          description: Start of the range. Must be sent together with `to`.
           schema:
             type: string
             format: date-time
           example: "2026-09-01T00:00:00Z"
         - name: to
           in: query
-          required: true
+          required: false
+          description: End of the range. Must be sent together with `from`.
           schema:
             type: string
             format: date-time
@@ -533,7 +525,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Deadline'
         '400':
-          description: Invalid date range parameters
+          description: Only one of from/to was sent, or a date is not valid ISO 8601
           content:
             application/json:
               schema:
@@ -661,16 +653,9 @@ paths:
     get:
       tags:
         - Study Materials
-      summary: Get all flashcard decks, optionally filtered by group
-      description: Retrieves all flashcard decks with their cards, optionally filtered to a specific group
+      summary: Get all flashcard decks
+      description: Retrieves all flashcard decks with their cards
       operationId: getFlashcardDecks
-      parameters:
-        - name: groupId
-          in: query
-          required: false
-          schema:
-            type: string
-          example: g1
       responses:
         '200':
           description: Successfully retrieved flashcard decks with cards
@@ -690,8 +675,125 @@ paths:
                       deck_id: d1
                       question: What is a hash table?
                       answer: A data structure that maps keys to values for O(1) average lookup
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          description: Server error - unable to fetch flashcard decks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/properties:
+    get:
+      tags:
+        - Partner Integration
+      summary: List properties from the upstream partner (SettleIn)
+      description: >-
+        Server-side proxy to SettleIn's property list. StudySync calls SettleIn with its own
+        partner key and returns a normalized shape, so no partner credentials reach the browser.
+      operationId: getProperties
+      responses:
+        '200':
+          description: Normalized property list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Property'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/PartnerUnavailable'
+
+  /api/properties/{id}/study-amenities:
+    get:
+      tags:
+        - Partner Integration
+      summary: Study amenities for a partner property
+      description: >-
+        Fetches SettleIn's /api/v1/properties/{id}/study-amenities and normalizes it (typed numbers
+        and booleans, nested quiet_hours). The `source` field is `live` for SettleIn's real server
+        and `stand-in` when SETTLEIN_URL points at a local stand-in server.
+      operationId: getPropertyStudyAmenities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: SettleIn property ID
+          schema:
+            type: string
+          example: prop-003
+      responses:
+        '200':
+          description: Normalized study amenities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyAmenities'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Property not found at SettleIn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Property not found
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/PartnerUnavailable'
+
+  /api/bookings:
+    get:
+      tags:
+        - Study Bookings
+      summary: List study-spot bookings
+      operationId: getBookings
+      parameters:
+        - name: memberId
+          in: query
+          required: false
+          description: Only bookings made by this member
+          schema:
+            type: string
+          example: anna
+        - name: propertyId
+          in: query
+          required: false
+          description: Only bookings for this property
+          schema:
+            type: string
+          example: prop-003
+        - name: status
+          in: query
+          required: false
+          description: Defaults to confirmed
+          schema:
+            type: string
+            enum:
+              - confirmed
+              - cancelled
+              - all
+            default: confirmed
+      responses:
+        '200':
+          description: Bookings, ordered by date and start time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
         '400':
-          description: Invalid group ID parameter
+          description: Invalid status filter
           content:
             application/json:
               schema:
@@ -701,7 +803,145 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
-          description: Server error - unable to fetch flashcard decks
+          description: Server error - unable to fetch bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - Study Bookings
+      summary: Book a study session at a partner property
+      description: >-
+        Validates the request against SettleIn's study-amenities for the property: the guest count
+        must not exceed max_study_guests, and the session must not overlap quiet hours when the
+        policy is enforced. Returns 502 if SettleIn cannot be reached, because the property cannot
+        be verified. Bookings are stored by StudySync; SettleIn is not notified.
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - property_id
+                - booked_by
+                - session_date
+                - start_time
+                - end_time
+              properties:
+                property_id:
+                  type: string
+                  maxLength: 40
+                  example: prop-003
+                booked_by:
+                  type: string
+                  maxLength: 10
+                  description: ID of an existing member
+                  example: anna
+                session_date:
+                  type: string
+                  format: date
+                  description: Today or later
+                  example: "2026-11-10"
+                start_time:
+                  type: string
+                  description: 24-hour HH:MM
+                  example: "14:00"
+                end_time:
+                  type: string
+                  description: 24-hour HH:MM, after start_time
+                  example: "17:00"
+                guests:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  example: 2
+                note:
+                  type: string
+                  maxLength: 200
+      responses:
+        '201':
+          description: Booking confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid or missing fields, unknown member, guest limit exceeded, or session overlaps quiet hours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Session overlaps this property's quiet hours (22:00 to 06:00)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Property not found at SettleIn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: That time slot is already booked for this property
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: That time slot is already booked for this property
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          description: Server error - unable to create booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          $ref: '#/components/responses/PartnerUnavailable'
+
+  /api/bookings/{id}:
+    delete:
+      tags:
+        - Study Bookings
+      summary: Cancel a booking
+      description: Marks the booking as cancelled; the record is kept.
+      operationId: cancelBooking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: b3f9a1c2
+                  status:
+                    type: string
+                    example: cancelled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          description: Server error - unable to cancel booking
           content:
             application/json:
               schema:
@@ -744,6 +984,14 @@ components:
             error: Too many requests
             message: Too many requests
             retryAfter: 60
+    PartnerUnavailable:
+      description: Bad Gateway - the upstream partner (SettleIn) is unreachable or returned unusable data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Partner data unavailable
   schemas:
     Member:
       type: object
@@ -936,6 +1184,142 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Flashcard'
+
+    Property:
+      type: object
+      description: A property listed by the upstream partner (SettleIn), normalized by StudySync
+      properties:
+        id:
+          type: string
+          nullable: true
+          example: prop-003
+        title:
+          type: string
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        price:
+          type: number
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        campus:
+          type: string
+          nullable: true
+        verified:
+          type: boolean
+        vacant_units:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          nullable: true
+
+    StudyAmenities:
+      type: object
+      description: Normalized study amenities for a partner property
+      required:
+        - property_id
+        - has_dedicated_desk
+        - has_backup_generator
+        - quiet_hours
+        - source
+      properties:
+        property_id:
+          type: string
+          example: prop-003
+        name:
+          type: string
+          nullable: true
+          example: Sunrise Court
+        wifi_rating:
+          type: number
+          nullable: true
+          example: 4.5
+        wifi_speed_mbps:
+          type: number
+          nullable: true
+          example: 50
+        has_dedicated_desk:
+          type: boolean
+        has_backup_generator:
+          type: boolean
+        quiet_hours:
+          type: object
+          properties:
+            starts_at:
+              type: string
+              nullable: true
+              example: "22:00"
+            ends_at:
+              type: string
+              nullable: true
+              example: "06:00"
+            policy_enforced:
+              type: boolean
+        max_study_guests:
+          type: integer
+          nullable: true
+          example: 4
+        last_inspected_at:
+          type: string
+          nullable: true
+        source:
+          type: string
+          enum:
+            - live
+            - stand-in
+          description: "`stand-in` when StudySync is pointed at a local stand-in server instead of SettleIn"
+
+    Booking:
+      type: object
+      description: A study session booked at a partner property
+      required:
+        - id
+        - property_id
+        - booked_by
+        - session_date
+        - start_time
+        - end_time
+        - guests
+        - status
+      properties:
+        id:
+          type: string
+          example: b3f9a1c2
+        property_id:
+          type: string
+          example: prop-003
+        property_name:
+          type: string
+          nullable: true
+          example: Sunrise Court
+        booked_by:
+          type: string
+          example: anna
+        session_date:
+          type: string
+          format: date
+          example: "2026-11-10"
+        start_time:
+          type: string
+          example: "14:00"
+        end_time:
+          type: string
+          example: "17:00"
+        guests:
+          type: integer
+          example: 2
+        note:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - confirmed
+            - cancelled
 
     Error:
       type: object

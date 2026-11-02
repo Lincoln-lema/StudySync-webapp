@@ -1,6 +1,6 @@
 # StudySync API
 
-StudySync is a study-management API for a student group. It supports members, shared tasks, deadlines, activity logs, and flashcard decks. It is designed for the student group's frontend and partner teams integrating with the API.
+StudySync is a study-management API for a student group. It supports members, shared tasks, deadlines, activity logs, flashcard decks, and study-spot bookings (backed by the SettleIn housing API). It is designed for the student group's frontend and partner teams integrating with the API.
 
 The complete API contract is available in [`openapi.yaml`](openapi.yaml), with a rendered version in [`docs/index.html`](docs/index.html).
 
@@ -16,6 +16,7 @@ The complete API contract is available in [`openapi.yaml`](openapi.yaml), with a
   - [Reliability & Activity](#reliability--activity)
   - [Deadlines & Calendar](#deadlines--calendar)
   - [Flashcards](#flashcards)
+  - [Study Spots & Bookings](#study-spots--bookings)
 - [Error Handling](#error-handling)
 - [Known Limitations](#known-limitations)
 
@@ -71,6 +72,8 @@ Append each endpoint path exactly as documented. Some paths start with `/api`, w
 | Reliability score | `/users/{userId}/reliability-score` |
 | User activity | `/users/{userId}/activity` |
 | Calendar events | `/calendar-events` |
+| Properties (from SettleIn) | `/api/properties` |
+| Study-spot bookings | `/api/bookings` |
 
 ### Hosted Instances
 
@@ -112,6 +115,12 @@ Additional schema definitions are available in:
 server/schema_additions.sql
 ```
 
+Then create the bookings table (safe to re-run):
+
+```bash
+node scripts/migrate-bookings.js
+```
+
 ### 4. Configure Environment Variables
 
 Create a `.env` file inside the `server` directory.
@@ -126,7 +135,11 @@ DB_NAME=studysync
 DB_PORT=3306
 PORT=5000
 API_KEYS=your-api-key-here
+SETTLEIN_URL=http://localhost:4000
+SETTLEIN_API_KEY=your-settlein-key-if-you-have-one
 ```
+
+`API_KEYS` is comma-separated (one per consumer). `SETTLEIN_URL` points at SettleIn's API, or at the local stand-in (`node mock-settlein.js`) when their tunnel is down.
 
 **Important:** Keep your `.env` file private. Do not commit real API keys or database credentials to version control.
 
@@ -481,14 +494,14 @@ Returns activity records in the same format as `/users/{userId}/activity`, with 
 
 ### `GET /api/deadlines`
 
-Returns deadlines within a specified date range.
+Returns deadlines, optionally within a date range.
 
-**Required query parameters**
+**Optional query parameters**
 
 - `from` — start date in ISO 8601 date format (`YYYY-MM-DD`).
 - `to` — end date in ISO 8601 date format (`YYYY-MM-DD`).
 
-Both parameters are required.
+Provide both or neither. With neither, all deadlines are returned. With only one, the API returns `400`.
 
 **Example request**
 
@@ -560,6 +573,69 @@ curl -H "X-API-Key: <your-api-key>" \
 
 ---
 
+## Study Spots & Bookings
+
+These endpoints read study-space details from the upstream SettleIn API and let members book a study session at a property. The server checks each booking against SettleIn's data before saving it.
+
+### `GET /api/properties`
+
+Lists properties from SettleIn.
+
+```bash
+curl -H "X-API-Key: <your-api-key>" \
+  http://localhost:5000/api/properties
+```
+
+### `GET /api/properties/{id}/study-amenities`
+
+Returns study amenities for one property (quiet hours, Wi-Fi rating, desk and generator flags, maximum study guests). The response always uses a nested `quiet_hours` object and includes `"source": "live"` or `"stand-in"`.
+
+```bash
+curl -H "X-API-Key: <your-api-key>" \
+  http://localhost:5000/api/properties/prop-003/study-amenities
+```
+
+An unknown property returns `404`. If SettleIn is unreachable or returns an unexpected response, the API returns `502` with `{"error":"Partner data unavailable"}`.
+
+### `GET /api/bookings`
+
+Lists bookings. Optional query parameters: `memberId`, `propertyId`, and `status` (`confirmed` by default, `cancelled`, or `all`).
+
+```bash
+curl -H "X-API-Key: <your-api-key>" \
+  "http://localhost:5000/api/bookings?memberId=anna"
+```
+
+### `POST /api/bookings`
+
+Creates a booking.
+
+**Required fields:** `property_id`, `booked_by` (an existing member id), `session_date` (`YYYY-MM-DD`, not in the past), `start_time` and `end_time` (`HH:MM`, end after start).
+**Optional fields:** `guests` (whole number, default 1) and `note` (up to 200 characters).
+
+```bash
+curl -X POST \
+  -H "X-API-Key: <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"property_id":"prop-003","booked_by":"anna","session_date":"2026-12-01","start_time":"14:00","end_time":"16:00","guests":2}' \
+  http://localhost:5000/api/bookings
+```
+
+**Response — `201 Created`** with the saved booking (`id`, `status: "confirmed"`, and the submitted fields).
+
+| Status | When |
+|---|---|
+| `400` | A field is missing or invalid, the member does not exist, guests exceed the property's `max_study_guests`, or the session overlaps the property's enforced quiet hours |
+| `404` | Unknown property |
+| `409` | Another confirmed booking overlaps that time at the property |
+| `502` | SettleIn could not be reached, so the property cannot be verified. Nothing is saved. |
+
+### `DELETE /api/bookings/{id}`
+
+Cancels a booking. The row is kept with `status: "cancelled"`, and the response is `{"id": "...", "status": "cancelled"}`. An unknown id returns `404`.
+
+---
+
 ## Error Handling
 
 The API returns JSON error responses for errors handled by its routes.
@@ -578,7 +654,7 @@ Example validation error:
 }
 ```
 
-Authentication errors and rate-limit errors use the `message` field.
+Authentication errors and rate-limit errors include both `error` and `message`.
 
 ### Common HTTP Status Codes
 
@@ -590,8 +666,10 @@ Authentication errors and rate-limit errors use the `message` field.
 | `400 Bad Request` | Request contains missing or invalid data. |
 | `401 Unauthorized` | API key is missing or invalid. |
 | `404 Not Found` | Requested resource does not exist. |
+| `409 Conflict` | The booking overlaps an existing confirmed booking. |
 | `429 Too Many Requests` | Rate limit exceeded. |
 | `500 Internal Server Error` | Server encountered an unexpected error. |
+| `502 Bad Gateway` | An upstream partner (SettleIn) is unreachable or returned an unexpected response. |
 
 ### Common Error Responses
 
@@ -662,6 +740,13 @@ Rate-limit counters are stored in memory. Restarting the server resets the reque
 API keys are loaded from the `.env` file at startup. Restarting the server reloads the configured keys.
 
 Changes to the API key configuration therefore require a server restart.
+
+### 5. Bookings and the Partner Dependency
+
+- Bookings can only be created while SettleIn (or the local stand-in) is reachable, because every booking is validated against the property's current amenities. Reads of existing bookings do not depend on SettleIn.
+- `booked_by` is taken from the request. The API checks that the member exists but does not verify that the caller is that member. There is no user login.
+- Cancelling is a soft delete: cancelled bookings stay in the table and are hidden unless `status=cancelled` or `status=all` is requested.
+- Booking dates and times are stored without a timezone and are interpreted in the server's timezone.
 
 ---
 

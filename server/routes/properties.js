@@ -119,6 +119,6 @@ router.get('/:id/study-amenities', async (req, res) => {
   }
 });
 
-router.helpers = { fetchPartner, normalizeAmenities };
+router.helpers = { fetchPartner, normalizeAmenities, lastGood };
 
 module.exports = router;

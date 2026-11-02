@@ -28,6 +28,8 @@ const field = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm';
 export default function StudySpot({ currentUser }) {
   const [amenities, setAmenities] = useState(null);
   const [status, setStatus] = useState('loading');
+  const [stale, setStale] = useState(false);
+  const [asOf, setAsOf] = useState(null);
   const [members, setMembers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [form, setForm] = useState({
@@ -45,7 +47,14 @@ export default function StudySpot({ currentUser }) {
   useEffect(() => {
     let cancelled = false;
     api(`/properties/${PROPERTY_ID}/study-amenities`)
-      .then((data) => { if (!cancelled) { setAmenities(data); setStatus('success'); } })
+      .then((data) => {
+        if (!cancelled) {
+          setAmenities(data);
+          setStale(Boolean(data.stale));
+          setAsOf(data.asOf);
+          setStatus('success');
+        }
+      })
       .catch((err) => { if (!cancelled) { console.error(err); setStatus('error'); } });
     api('/members')
       .then((data) => { if (!cancelled) setMembers(data); })
@@ -123,6 +132,12 @@ export default function StudySpot({ currentUser }) {
           {isStandIn ? 'Stand-in data (SettleIn offline)' : 'Live data from SettleIn Housing API'}
         </p>
       </div>
+
+      {stale && (
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          Showing saved data from {new Date(asOf).toLocaleTimeString()}. The partner is not responding.
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="bg-white rounded-xl border border-slate-200 p-6">

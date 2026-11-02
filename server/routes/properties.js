@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { fetchWithRetry } = require('../resilientFetch');
+
+// Last good amenities response per property id, kept in memory (lost on restart).
+const lastGood = new Map(); // id -> { data, asOf }
 
 const base = () => (process.env.SETTLEIN_URL || '').replace(/\/+$/, '');
 const isStandIn = () => /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(base());
@@ -17,7 +21,7 @@ async function fetchPartner(path) {
   const headers = {};
   if (process.env.SETTLEIN_API_KEY) headers['X-API-Key'] = process.env.SETTLEIN_API_KEY;
 
-  const r = await fetch(url, { headers });
+  const r = await fetchWithRetry(url, { headers }, { timeoutMs: 1500, retries: 2, delayMs: 200 });
   const text = await r.text();
   let body = null;
   try { body = text ? JSON.parse(text) : null; } catch { body = text; }
@@ -74,30 +78,44 @@ router.get('/', async (req, res) => {
       image: p.image ?? null,
     })));
   } catch (err) {
-    console.error('SettleIn list call failed:', (err.cause && err.cause.code) || err.message, base());
+    const reason = err.name === 'TimeoutError' ? 'timeout' : (err.cause && err.cause.code) || err.message;
+    console.error('SettleIn list call failed:', reason, base());
     res.status(502).json({ error: 'Partner data unavailable' });
   }
 });
 
 router.get('/:id/study-amenities', async (req, res) => {
+  const id = req.params.id;
+
+  // Saved copy, clearly flagged, or the normal 502 if we have nothing saved.
+  const fallback = () => {
+    const saved = lastGood.get(id);
+    if (saved) return res.json({ ...saved.data, stale: true, asOf: saved.asOf });
+    return res.status(502).json({ error: 'Partner data unavailable' });
+  };
+
   try {
     const { url, status, body } = await fetchPartner(
-      `/api/v1/properties/${encodeURIComponent(req.params.id)}/study-amenities`
+      `/api/v1/properties/${encodeURIComponent(id)}/study-amenities`
     );
     if (status === 404) return res.status(404).json({ error: 'Property not found' });
     if (status < 200 || status >= 300) {
       console.error('SettleIn amenities failed', status, url);
-      return res.status(502).json({ error: 'Partner data unavailable' });
+      return fallback();
     }
-    const n = normalizeAmenities(body, req.params.id);
+    const n = normalizeAmenities(body, id);
     if (!n || (n.wifi_rating === null && n.wifi_speed_mbps === null)) {
       console.error('SettleIn amenities: unexpected shape', url);
-      return res.status(502).json({ error: 'Partner data unavailable' });
+      return fallback();
     }
-    res.json({ ...n, source: isStandIn() ? 'stand-in' : 'live' });
+    const data = { ...n, source: isStandIn() ? 'stand-in' : 'live' };
+    const asOf = new Date().toISOString();
+    lastGood.set(id, { data, asOf });
+    res.json({ ...data, stale: false, asOf });
   } catch (err) {
-    console.error('SettleIn amenities call failed:', (err.cause && err.cause.code) || err.message, base());
-    res.status(502).json({ error: 'Partner data unavailable' });
+    const reason = err.name === 'TimeoutError' ? 'timeout' : (err.cause && err.cause.code) || err.message;
+    console.error('SettleIn amenities call failed:', reason, base());
+    return fallback();
   }
 });
 

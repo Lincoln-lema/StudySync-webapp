@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const { requireApiKey, keyCount } = require('./middleware/auth');
 const { rateLimit } = require('./middleware/rateLimit');
+const { monitor, statsHandler } = require('./monitoring');
 
 const membersRouter = require('./routes/members');
 const usersRouter = require('./routes/Users');
@@ -15,6 +16,8 @@ const propertiesRouter = require('./routes/properties');
 const bookingsRouter = require('./routes/bookings');
 
 const app = express();
+// Week 12: logs every request first, so rejected requests (401, 429) are logged too.
+app.use(monitor);
 app.use(cors());
 app.use(express.json());
 
@@ -23,6 +26,9 @@ app.use(requireApiKey);
 
 // Week 9: Rate Limiter.
 app.use(rateLimit({ windowMs: 60 * 1000, max: 100 }));
+
+// Week 12: in-memory request totals, behind the key check like every other route.
+app.get('/stats', statsHandler);
 // Internal /api/* paths
 app.use('/api/members', membersRouter);
 app.use('/api/tasks', tasksRouter);

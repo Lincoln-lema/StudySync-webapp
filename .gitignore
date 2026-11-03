@@ -10,3 +10,6 @@ pnpm-debug.log*
 Thumbs.db
 
 !.env.example
+
+# Week 12: request logs
+*.log

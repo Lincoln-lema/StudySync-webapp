@@ -693,6 +693,26 @@ Check the HTTP status code first when handling errors. A `2xx` status indicates 
 
 ---
 
+## Monitoring: /stats
+
+`GET /stats` reports request totals since the server started. It needs an `X-API-Key` header like every other route.
+
+```
+curl -H "X-API-Key: <your-api-key>" http://localhost:5000/stats
+```
+
+Example response (200):
+
+```json
+{"startedAt":"2026-11-03T10:14:31.343Z","uptimeSeconds":75,"total":268,"clientErrors":198,"serverErrors":0,"errorRatePercent":0,"avgMs":1.1,"routes":{"GET /api/tasks":{"count":38,"clientErrors":0,"serverErrors":0,"avgMs":1.7,"maxMs":4}}}
+```
+
+- `total`: every request that finished since the server started. Rejected requests (401, 429) count too.
+- `clientErrors` and `serverErrors`: 4xx and 5xx counts. `errorRatePercent` is server errors divided by total.
+- `routes`: per-route counts, averages, and slowest request. Requests that never reached a route appear as `(no route)`.
+
+Each request is also written to the console as one JSON line (time, method, path, status, milliseconds, and a `key-xxxxxx` caller label derived from a hash of the key). Keys and query strings are never logged.
+
 ## Known Limitations
 
 ### 1. Field Length Limits

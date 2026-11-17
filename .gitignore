@@ -13,3 +13,5 @@ Thumbs.db
 
 # Week 12: request logs
 *.log
+
+!.env.example

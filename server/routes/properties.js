@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { fetchWithRetry } = require('../resilientFetch');
+const { listVersion } = require('../partner');
 
 // Last good amenities response per property id, kept in memory (lost on restart).
 const lastGood = new Map(); // id -> { data, asOf }
@@ -60,12 +61,14 @@ function normalizeAmenities(a, requestedId) {
 
 router.get('/', async (req, res) => {
   try {
-    const { url, ok, status, body } = await fetchPartner('/api/v1/properties');
+    // Week 13: which SettleIn list version to call (v1 or v2) lives in partner.js.
+    const ver = listVersion();
+    const { url, ok, status, body } = await fetchPartner(ver.path);
     if (!ok) {
       console.error('SettleIn list failed', status, url);
       return res.status(502).json({ error: 'Partner data unavailable' });
     }
-    const list = Array.isArray(body) ? body : (body && body.data) || [];
+    const list = ver.parse(body); // throws on the wrong shape, so a mismatch is loud
     res.json(list.map((p) => ({
       id: p.id ?? p.accommodation_id ?? null,
       title: p.title ?? p.accommodation_name ?? null,
